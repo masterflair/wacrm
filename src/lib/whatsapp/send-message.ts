@@ -217,13 +217,46 @@ export async function sendMessageToConversation(
 
   const isMediaKind = (MEDIA_KINDS as readonly string[]).includes(messageType);
 
-  // Conversation + contact, account-scoped.
-  const { data: conversation, error: convError } = await db
-    .from('conversations')
-    .select('*, contact:contacts(*)')
-    .eq('id', conversationId)
-    .eq('account_id', accountId)
-    .single();
+  // Parallelize all initial database lookups
+  const [
+    { data: conversation, error: convError },
+    { data: config, error: configError },
+    replyResult,
+    templateResult
+  ] = await Promise.all([
+    // 1. Conversation + contact
+    db
+      .from('conversations')
+      .select('*, contact:contacts(*)')
+      .eq('id', conversationId)
+      .eq('account_id', accountId)
+      .single(),
+    // 2. WhatsApp config
+    db
+      .from('whatsapp_config')
+      .select('*')
+      .eq('account_id', accountId)
+      .single(),
+    // 3. Optional reply target
+    replyToMessageId 
+      ? db
+          .from('messages')
+          .select('message_id, conversation_id')
+          .eq('id', replyToMessageId)
+          .eq('conversation_id', conversationId)
+          .maybeSingle()
+      : Promise.resolve({ data: null, error: null }),
+    // 4. Optional template row
+    (messageType === 'template' && templateName)
+      ? db
+          .from('message_templates')
+          .select('*')
+          .eq('account_id', accountId)
+          .eq('name', templateName)
+          .eq('language', templateLanguage || 'en_US')
+          .maybeSingle()
+      : Promise.resolve({ data: null, error: null })
+  ]);
 
   if (convError || !conversation) {
     throw new SendMessageError('not_found', 'Conversation not found', 404);
@@ -246,13 +279,6 @@ export async function sendMessageToConversation(
       400
     );
   }
-
-  // WhatsApp config, account-scoped.
-  const { data: config, error: configError } = await db
-    .from('whatsapp_config')
-    .select('*')
-    .eq('account_id', accountId)
-    .single();
 
   if (configError || !config) {
     throw new SendMessageError(
@@ -280,17 +306,11 @@ export async function sendMessageToConversation(
       });
   }
 
-  // Resolve the reply target to its Meta message_id. The parent must
-  // belong to this same conversation — otherwise a caller could quote
-  // messages they can't see by guessing UUIDs.
+  // Handle reply result
   let contextMessageId: string | undefined;
   if (replyToMessageId) {
-    const { data: parent, error: parentError } = await db
-      .from('messages')
-      .select('message_id, conversation_id')
-      .eq('id', replyToMessageId)
-      .eq('conversation_id', conversationId)
-      .maybeSingle();
+    const parent = replyResult.data;
+    const parentError = replyResult.error;
 
     if (parentError || !parent) {
       throw new SendMessageError(
@@ -308,17 +328,10 @@ export async function sendMessageToConversation(
     }
   }
 
-  // Template row (for header + button components). isMessageTemplate
-  // guards against a malformed local row crashing the send-builder.
+  // Handle template result
   let templateRow: MessageTemplate | null = null;
   if (messageType === 'template' && templateName) {
-    const { data } = await db
-      .from('message_templates')
-      .select('*')
-      .eq('account_id', accountId)
-      .eq('name', templateName)
-      .eq('language', templateLanguage || 'en_US')
-      .maybeSingle();
+    const data = templateResult.data;
     if (data && !isMessageTemplate(data)) {
       throw new SendMessageError(
         'template_malformed',
@@ -430,69 +443,47 @@ export async function sendMessageToConversation(
     throw new SendMessageError('meta_error', `Meta API error: ${message}`, 502);
   }
 
-  if (workingPhone !== sanitizedPhone) {
-    console.log(
-      `[send-message] Auto-corrected contact phone: ${sanitizedPhone} → ${workingPhone}`
-    );
-    await db
-      .from('contacts')
-      .update({ phone: workingPhone })
-      .eq('id', contact.id);
-  }
-
-  // Persist the sent message. Field names MUST match the messages
-  // schema (see 001_initial_schema.sql).
-  // Interactive messages persist the body as content_text (so the
-  // conversation-list preview reads sensibly) plus the full structured
-  // payload so the thread can re-render the buttons / rows.
   const interactiveBody =
     messageType === 'interactive' ? interactivePayload!.body : null;
-
-  const { data: messageRecord, error: msgError } = await db
-    .from('messages')
-    .insert({
-      conversation_id: conversationId,
-      sender_type: 'agent',
-      content_type: messageType,
-      content_text: interactiveBody ?? contentText ?? null,
-      media_url: mediaUrl || null,
-      template_name: templateName || null,
-      interactive_payload:
-        messageType === 'interactive' ? interactivePayload : null,
-      message_id: waMessageId,
-      status: 'sent',
-      reply_to_message_id: replyToMessageId || null,
-    })
-    .select()
-    .single();
-
-  if (msgError) {
-    console.error('[send-message] error inserting sent message:', msgError);
-    throw new SendMessageError(
-      'db_error',
-      `Message sent to Meta but failed to save to DB: ${msgError.message}`,
-      500
-    );
-  }
 
   const lastMessageText =
     messageType === 'interactive'
       ? interactivePayloadPreviewText(interactivePayload!)
       : contentText || `[${messageType}]`;
 
-  await db
-    .from('conversations')
-    .update({
-      last_message_text: lastMessageText,
-      last_message_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
-    })
-    .eq('id', conversationId);
+  // Parallelize all post-send database writes
+  const [msgResult] = await Promise.all([
+    // 1. Persist the sent message
+    db
+      .from('messages')
+      .insert({
+        conversation_id: conversationId,
+        sender_type: 'agent',
+        content_type: messageType,
+        content_text: interactiveBody ?? contentText ?? null,
+        media_url: mediaUrl || null,
+        template_name: templateName || null,
+        interactive_payload:
+          messageType === 'interactive' ? interactivePayload : null,
+        message_id: waMessageId,
+        status: 'sent',
+        reply_to_message_id: replyToMessageId || null,
+      })
+      .select()
+      .single(),
 
-  // Pause any active Flow run for this contact — the agent stepping in
-  // is the strongest "yield, human is here" signal. Best-effort.
-  try {
-    const { error: pauseErr } = await supabaseAdmin()
+    // 2. Update conversation
+    db
+      .from('conversations')
+      .update({
+        last_message_text: lastMessageText,
+        last_message_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      })
+      .eq('id', conversationId),
+
+    // 3. Pause active flow runs (best-effort)
+    supabaseAdmin()
       .from('flow_runs')
       .update({
         status: 'paused_by_agent',
@@ -501,14 +492,29 @@ export async function sendMessageToConversation(
       })
       .eq('account_id', accountId)
       .eq('contact_id', contact.id)
-      .eq('status', 'active');
-    if (pauseErr) {
-      console.error('[flows] pause-on-agent-send failed:', pauseErr.message);
-    }
-  } catch (err) {
-    console.error(
-      '[flows] pause-on-agent-send threw:',
-      err instanceof Error ? err.message : err
+      .eq('status', 'active')
+      .then(({ error }) => {
+        if (error) console.error('[flows] pause-on-agent-send failed:', error.message);
+      }),
+
+    // 4. Update contact phone if auto-corrected
+    workingPhone !== sanitizedPhone
+      ? db
+          .from('contacts')
+          .update({ phone: workingPhone })
+          .eq('id', contact.id)
+          .then(() => console.log(`[send-message] Auto-corrected contact phone: ${sanitizedPhone} → ${workingPhone}`))
+      : Promise.resolve()
+  ]);
+
+  const { data: messageRecord, error: msgError } = msgResult;
+
+  if (msgError) {
+    console.error('[send-message] error inserting sent message:', msgError);
+    throw new SendMessageError(
+      'db_error',
+      `Message sent to Meta but failed to save to DB: ${msgError.message}`,
+      500
     );
   }
 

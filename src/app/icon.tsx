@@ -8,8 +8,13 @@ export const runtime = "edge";
 export const contentType = "image/png";
 
 export default function Icon(request: Request) {
-  const url = new URL(request.url);
-  const sizeQuery = Number(url.searchParams.get("size") ?? "32");
+  let sizeQuery = 32;
+  try {
+    const url = new URL(request.url, "http://localhost:3000");
+    sizeQuery = Number(url.searchParams.get("size") ?? "32");
+  } catch (e) {
+    // Keep default sizeQuery = 32
+  }
   const size = Number.isInteger(sizeQuery) && sizeQuery > 0 ? sizeQuery : 32;
 
   return new ImageResponse(

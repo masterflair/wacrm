@@ -15,6 +15,12 @@ import { MessageThread } from "@/components/inbox/message-thread";
 import { ContactSidebar } from "@/components/inbox/contact-sidebar";
 import { WifiOff, X } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { toast } from "sonner";
+import {
+  playNotificationSound,
+  requestNotificationPermission,
+  showDesktopNotification,
+} from "@/lib/notifications";
 
 // Remembers the agent's show/hide choice for the desktop contact panel
 // across reloads and sessions (device-scoped, like the theme prefs).
@@ -182,6 +188,8 @@ function InboxPageInner() {
 
   // Check WhatsApp connection status on mount
   useEffect(() => {
+    requestNotificationPermission();
+
     const checkConnection = async () => {
       const supabase = createClient();
       const {

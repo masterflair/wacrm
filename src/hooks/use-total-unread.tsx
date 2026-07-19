@@ -3,6 +3,12 @@
 import { useEffect, useRef, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import type { Conversation } from "@/types";
+import { MessageCircle } from "lucide-react";
+import { toast } from "sonner";
+import {
+  playNotificationSound,
+  showDesktopNotification,
+} from "@/lib/notifications";
 
 /**
  * Count of conversations with at least one unread inbound message for
@@ -54,6 +60,41 @@ export function useTotalUnread(): number {
             if (oldRow.id) map.delete(oldRow.id);
           } else {
             const row = payload.new as Conversation;
+            const oldRow = payload.old as Partial<Conversation>;
+            
+            // Trigger notification if the unread count just increased
+            if (
+              payload.eventType === "UPDATE" &&
+              (row.unread_count || 0) > (oldRow.unread_count || 0)
+            ) {
+              // Play soft in-app sound only if the app is focused (no OS notification)
+              if (!document.hidden) {
+                playNotificationSound();
+              }
+
+              // Fetch contact details asynchronously for the banner
+              (async () => {
+                const client = createClient();
+                const { data } = await client
+                  .from("contacts")
+                  .select("name, phone, avatar_url")
+                  .eq("id", row.contact_id)
+                  .maybeSingle();
+
+                const senderName = data?.name || data?.phone || "a customer";
+
+                toast(`Message from ${senderName}`, {
+                  description: row.last_message_text || "You have a new message.",
+                  icon: <MessageCircle className="h-5 w-5 text-primary" />,
+                  className: "border-l-4 border-l-primary bg-card/90 backdrop-blur-xl shadow-2xl p-4 gap-4",
+                });
+                
+                if (document.hidden) {
+                  showDesktopNotification(`Message from ${senderName}`, row.last_message_text || "You have a new message.");
+                }
+              })();
+            }
+
             map.set(row.id, row.unread_count ?? 0);
           }
           // Recompute — cheap, conversations per user stay small.
