@@ -672,9 +672,9 @@ function InboxPageInner() {
                   type="button"
                   onClick={handleCloseMobileContactPanel}
                   aria-label="Close contact panel"
-                  className="absolute right-3 top-3 inline-flex h-9 w-9 items-center justify-center rounded-full text-muted-foreground transition hover:bg-muted hover:text-foreground"
+                  className="absolute right-3 top-3 z-50 inline-flex h-12 w-12 items-center justify-center rounded-full text-muted-foreground transition hover:bg-muted hover:text-foreground"
                 >
-                  <X className="h-4 w-4" />
+                  <X className="h-6 w-6" />
                 </button>
                 <ContactSidebar
                   contact={activeContact}
