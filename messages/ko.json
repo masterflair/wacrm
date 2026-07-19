@@ -15,7 +15,7 @@
     "createAccount": "계정 만들기"
   },
   "Sidebar": {
-    "title": "WhatsApp용 CRM 템플릿",
+    "title": "RenderAura CRM",
     "dashboard": "대시보드",
     "inbox": "인박스",
     "notifications": "알림",
@@ -180,7 +180,7 @@
       "templates": "템플릿",
       "readOnlyPlaceholder": "읽기 전용 — 뷰어는 열람만 가능하고 답장할 수 없습니다",
       "sessionExpiredPlaceholder": "세션 만료 - 템플릿을 사용하세요",
-      "typeMessagePlaceholder": "메시지를 입력하세요... (줄바꿈은 Shift+Enter)",
+      "typeMessagePlaceholder": "메시지...",
       "readOnlyTitle": "읽기 전용 — 현재 역할로는 메시지를 보낼 수 없습니다",
       "recording": "녹음 중… {current} / {max}",
       "cancel": "취소",
@@ -256,6 +256,15 @@
     },
     "sidebar": {
       "contactInfo": "연락처 정보",
+      "basicInfo": "기본 정보",
+      "description": "설명",
+      "editContact": "수정",
+      "cancel": "취소",
+      "nameLabel": "이름",
+      "phoneLabel": "전화번호",
+      "emailLabel": "이메일",
+      "companyLabel": "회사",
+      "saveChanges": "변경 사항 저장",
       "tags": "태그",
       "notes": "메모",
       "deals": "딜",

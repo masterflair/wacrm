@@ -22,8 +22,8 @@ const inter = Inter({
 
 export const metadata: Metadata = {
   title: {
-    default: "wacrm",
-    template: "%s — wacrm",
+    default: "RenderAura CRM",
+    template: "%s — RenderAura CRM",
   },
   description: "Self-hostable CRM template for WhatsApp.",
   robots: {
@@ -31,8 +31,19 @@ export const metadata: Metadata = {
     follow: false,
   },
   icons: {
-    icon: [{ url: "/icon" }],
+    icon: [
+      { url: "/icon?size=32", sizes: "32x32", type: "image/png" },
+      { url: "/icon?size=192", sizes: "192x192", type: "image/png" },
+      { url: "/icon?size=512", sizes: "512x512", type: "image/png" },
+    ],
+    shortcut: [
+      { url: "/icon?size=192", sizes: "192x192", type: "image/png" },
+    ],
+    apple: [
+      { url: "/icon?size=180", sizes: "180x180", type: "image/png" },
+    ],
   },
+  manifest: "/manifest.webmanifest",
   formatDetection: {
     email: false,
     address: false,
@@ -41,6 +52,8 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
   themeColor: "#020617",
   colorScheme: "dark light",
 };

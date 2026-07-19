@@ -1,18 +1,17 @@
 import { ImageResponse } from "next/og";
 
-// Replaces the default Next.js favicon with the brand mark — Hostinger
-// violet rounded square + white chat-square glyph — matching the
-// sidebar logo in `src/components/layout/sidebar.tsx`. Next.js renders
-// this at build time and auto-injects <link rel="icon"> into <head>.
-//
-// This route takes precedence over src/app/favicon.ico, which is the
-// Next.js default and can stay on disk harmlessly (or be removed).
+// Replaces the default Next.js favicon with the brand mark.
+// This route can generate multiple PNG sizes for browser icons and
+// home-screen install assets.
 
 export const runtime = "edge";
-export const size = { width: 32, height: 32 };
 export const contentType = "image/png";
 
-export default function Icon() {
+export default function Icon(request: Request) {
+  const url = new URL(request.url);
+  const sizeQuery = Number(url.searchParams.get("size") ?? "32");
+  const size = Number.isInteger(sizeQuery) && sizeQuery > 0 ? sizeQuery : 32;
+
   return new ImageResponse(
     (
       <div
@@ -22,17 +21,17 @@ export default function Icon() {
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
-          background: "#7c3aed", // primary (Hostinger-aligned purple)
+          background: "#7c3aed",
           borderRadius: 6,
         }}
       >
         <svg
-          width="20"
-          height="20"
+          width={Math.round(size * 0.625)}
+          height={Math.round(size * 0.625)}
           viewBox="0 0 24 24"
           fill="none"
           stroke="#ffffff"
-          strokeWidth="2.5"
+          strokeWidth={Math.max(2, Math.round(size / 24))}
           strokeLinecap="round"
           strokeLinejoin="round"
         >
@@ -40,6 +39,6 @@ export default function Icon() {
         </svg>
       </div>
     ),
-    { ...size },
+    { width: size, height: size },
   );
 }

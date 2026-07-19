@@ -109,6 +109,7 @@ interface MessageThreadProps {
    */
   contactPanelOpen?: boolean;
   onToggleContactPanel?: () => void;
+  onOpenContactPanel?: () => void;
 }
 
 function formatDateSeparator(dateStr: string, t: ReturnType<typeof useTranslations>): string {
@@ -167,6 +168,7 @@ export function MessageThread({
   onRefresh,
   contactPanelOpen,
   onToggleContactPanel,
+  onOpenContactPanel,
 }: MessageThreadProps) {
   const t = useTranslations("Inbox.messageThread");
   const tTimer = useTranslations("Inbox.sessionTimer");
@@ -894,7 +896,22 @@ export function MessageThread({
               <ArrowLeft className="h-5 w-5" />
             </button>
           )}
-          <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full bg-muted text-sm font-medium text-foreground">
+          {onOpenContactPanel && (
+            <button
+              type="button"
+              onClick={onOpenContactPanel}
+              aria-label={t("showContactPanel")}
+              className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full bg-muted text-sm font-medium text-foreground lg:hidden"
+            >
+              {displayName.charAt(0).toUpperCase()}
+            </button>
+          )}
+          <div
+            className={cn(
+              "flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full bg-muted text-sm font-medium text-foreground",
+              onOpenContactPanel ? "hidden lg:flex" : ""
+            )}
+          >
             {displayName.charAt(0).toUpperCase()}
           </div>
           <div className="min-w-0">

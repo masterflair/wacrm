@@ -13,8 +13,7 @@ import { useRealtime } from "@/hooks/use-realtime";
 import { ConversationList } from "@/components/inbox/conversation-list";
 import { MessageThread } from "@/components/inbox/message-thread";
 import { ContactSidebar } from "@/components/inbox/contact-sidebar";
-import { toast } from "sonner";
-import { WifiOff } from "lucide-react";
+import { WifiOff, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 // Remembers the agent's show/hide choice for the desktop contact panel
@@ -69,6 +68,7 @@ function InboxPageInner() {
    * below reconciles to the stored value right after mount instead.
    */
   const [contactPanelOpen, setContactPanelOpen] = useState(true);
+  const [mobileContactPanelOpen, setMobileContactPanelOpen] = useState(false);
   useEffect(() => {
     try {
       const stored = localStorage.getItem(CONTACT_PANEL_STORAGE_KEY);
@@ -88,6 +88,14 @@ function InboxPageInner() {
       }
       return next;
     });
+  }, []);
+
+  const handleOpenMobileContactPanel = useCallback(() => {
+    setMobileContactPanelOpen(true);
+  }, []);
+
+  const handleCloseMobileContactPanel = useCallback(() => {
+    setMobileContactPanelOpen(false);
   }, []);
 
   // Fire the deep-link auto-select exactly once per URL — subsequent
@@ -456,6 +464,7 @@ function InboxPageInner() {
       setActiveConversation(conv);
       setActiveContact(conv.contact ?? null);
       setMessages([]);
+      setMobileContactPanelOpen(false);
       // Optimistically clear the unread badge for this conv. The
       // server-side reset is fired by the unread-reset effect inside
       // MessageThread (which reads activeConversation.unread_count, not
@@ -488,6 +497,13 @@ function InboxPageInner() {
     [activeConversation?.id, router]
   );
 
+  const handleContactUpdated = useCallback((updated: Contact) => {
+    setActiveContact(updated);
+    setActiveConversation((prev) =>
+      prev?.contact?.id === updated.id ? { ...prev, contact: updated } : prev
+    );
+  }, []);
+
   // Mobile "back" — deselect the conversation so the list pane comes
   // back. Also clears the ?c= param so a refresh lands on the list
   // instead of re-opening the thread the user just backed out of.
@@ -495,6 +511,7 @@ function InboxPageInner() {
     setActiveConversation(null);
     setActiveContact(null);
     setMessages([]);
+    setMobileContactPanelOpen(false);
     // Clearing the ref lets the deep-link auto-selector fire again if
     // the user later visits /inbox?c=<same-id> — desirable UX.
     autoSelectedForDeepLinkRef.current = null;
@@ -505,6 +522,10 @@ function InboxPageInner() {
   const handleMessagesLoaded = useCallback((loaded: Message[]) => {
     setMessages(loaded);
   }, []);
+
+  useEffect(() => {
+    setMobileContactPanelOpen(false);
+  }, [activeConversation?.id]);
 
   const handleNewMessage = useCallback((msg: Message) => {
     setMessages((prev) => {
@@ -623,16 +644,46 @@ function InboxPageInner() {
             onRefresh={handleManualRefresh}
             contactPanelOpen={contactPanelOpen}
             onToggleContactPanel={handleToggleContactPanel}
+            onOpenContactPanel={handleOpenMobileContactPanel}
           />
         </div>
-
+ 
+        {/* Mobile contact overlay */}
+        {mobileContactPanelOpen && activeContact && (
+          <div className="fixed inset-0 z-50 lg:hidden">
+            <div
+              className="absolute inset-0 bg-black/40"
+              onClick={handleCloseMobileContactPanel}
+            />
+            <div className="absolute inset-y-0 right-0 flex w-full max-w-sm">
+              <div
+                className="relative flex h-full w-full flex-col bg-card shadow-2xl"
+                onClick={(event) => event.stopPropagation()}
+              >
+                <button
+                  type="button"
+                  onClick={handleCloseMobileContactPanel}
+                  aria-label="Close contact panel"
+                  className="absolute right-3 top-3 inline-flex h-9 w-9 items-center justify-center rounded-full text-muted-foreground transition hover:bg-muted hover:text-foreground"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+                <ContactSidebar
+                  contact={activeContact}
+                  onContactUpdated={handleContactUpdated}
+                />
+              </div>
+            </div>
+          </div>
+        )}
+ 
         {/* Right panel: Contact sidebar — desktop only, and only when the
             agent hasn't collapsed it via the thread-header toggle (#258).
             On mobile it's always hidden (the `lg:block` below), so the
             toggle — which is itself desktop-only — never affects it. */}
         {contactPanelOpen && (
           <div className="hidden lg:block">
-            <ContactSidebar contact={activeContact} />
+            <ContactSidebar contact={activeContact} onContactUpdated={handleContactUpdated} />
           </div>
         )}
       </div>
