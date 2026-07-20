@@ -465,6 +465,25 @@
       "toastFailed_plural": "{count} contacts failed to import",
       "toastError": "Import failed"
     },
+    "exportModal": {
+      "title": "Export Contacts",
+      "desc": "Configure the scope and additional data to export to a CSV file.",
+      "exportRange": "Export Range",
+      "allContacts": "All contacts ({count} total)",
+      "filteredContacts": "Currently filtered contacts",
+      "byTags": "Contacts with specific tags",
+      "selectTags": "Select Tags",
+      "noTagsAvailable": "No tags available. Create tags in Settings.",
+      "additionalData": "Additional Data",
+      "optionIncludeTags": "Include tags (as a comma-separated list)",
+      "optionIncludeCustom": "Include custom fields (creates a column for each field)",
+      "cancel": "Cancel",
+      "exportBtn": "Export",
+      "selectAtLeastOneTag": "Please select at least one tag to export",
+      "noContactsMatch": "No contacts match the selected scope",
+      "exportSuccess": "Contacts exported successfully",
+      "exportFailed": "Failed to export contacts"
+    },
     "customFields": {
       "title": "Custom fields",
       "desc": "Define extra contact fields (e.g. ZIP code, lead source). They appear on every contact and in the “Update Contact Field” automation action.",

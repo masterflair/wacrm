@@ -54,6 +54,7 @@ import {
 import { ContactForm } from '@/components/contacts/contact-form';
 import { ContactDetailView } from '@/components/contacts/contact-detail-view';
 import { ImportModal } from '@/components/contacts/import-modal';
+import { ExportModal } from '@/components/contacts/export-modal';
 import { CustomFieldsManager } from '@/components/contacts/custom-fields-manager';
 import { useCan } from '@/hooks/use-can';
 import { GatedButton } from '@/components/ui/gated-button';
@@ -90,7 +91,7 @@ export default function ContactsPage() {
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<Contact | null>(null);
   const [deleting, setDeleting] = useState(false);
-  const [exporting, setExporting] = useState(false);
+  const [exportOpen, setExportOpen] = useState(false);
 
   // Bulk selection (page-scoped — only the loaded rows are selectable)
   const [selected, setSelected] = useState<Set<string>>(new Set());
@@ -341,67 +342,6 @@ export default function ContactsPage() {
     setPage(0);
   }
 
-  async function handleExport() {
-    setExporting(true);
-    try {
-      let allData: Contact[] = [];
-      
-      if (selectedTagIds.length > 0) {
-        const { data, error } = await supabase.rpc('filter_contacts_by_tags', {
-          p_tag_ids: selectedTagIds,
-          p_search: search.trim() || null,
-          p_limit: 100000,
-          p_offset: 0,
-        });
-        if (error) throw error;
-        allData = (data ?? []).map((r: { contact: Contact }) => r.contact);
-      } else {
-        let query = supabase.from('contacts').select('*').order('created_at', { ascending: false });
-        const term = search.trim();
-        if (term) {
-          query = query.or(`name.ilike.%${term}%,phone.ilike.%${term}%,email.ilike.%${term}%`);
-        }
-        const { data, error } = await query;
-        if (error) throw error;
-        allData = data ?? [];
-      }
-
-      if (allData.length === 0) {
-        toast.info(t('noContactsMatch'));
-        return;
-      }
-
-      const headers = ['Name', 'Phone', 'Email', 'Company', 'Created At'];
-      const csvRows = [headers.join(',')];
-
-      for (const contact of allData) {
-        const row = [
-          `"${(contact.name || '').replace(/"/g, '""')}"`,
-          `"${(contact.phone || '').replace(/"/g, '""')}"`,
-          `"${(contact.email || '').replace(/"/g, '""')}"`,
-          `"${(contact.company || '').replace(/"/g, '""')}"`,
-          `"${new Date(contact.created_at).toISOString()}"`,
-        ];
-        csvRows.push(row.join(','));
-      }
-
-      const csvContent = csvRows.join('\n');
-      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-      const url = URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.setAttribute('href', url);
-      link.setAttribute('download', `contacts_export_${new Date().toISOString().split('T')[0]}.csv`);
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-    } catch (error) {
-      console.error('Export error:', error);
-      toast.error(t('toastFailedLoad')); // generic error is fine here
-    } finally {
-      setExporting(false);
-    }
-  }
-
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -430,22 +370,17 @@ export default function ContactsPage() {
             onClick={() => setImportOpen(true)}
             className="border-border text-muted-foreground hover:bg-muted"
           >
-            <Upload className="size-4" />
+            <Download className="size-4" />
             {t('importBtn')}
           </GatedButton>
           <GatedButton
             variant="outline"
             canAct={canEdit}
             gateReason="export contacts"
-            onClick={handleExport}
-            disabled={exporting}
+            onClick={() => setExportOpen(true)}
             className="border-border text-muted-foreground hover:bg-muted"
           >
-            {exporting ? (
-              <Loader2 className="size-4 animate-spin" />
-            ) : (
-              <Download className="size-4" />
-            )}
+            <Upload className="size-4" />
             {t('exportBtn')}
           </GatedButton>
           <GatedButton
@@ -836,6 +771,16 @@ export default function ContactsPage() {
         open={importOpen}
         onOpenChange={setImportOpen}
         onImported={fetchContacts}
+      />
+
+      {/* Export Modal */}
+      <ExportModal
+        open={exportOpen}
+        onOpenChange={setExportOpen}
+        currentSearch={search}
+        currentSelectedTagIds={selectedTagIds}
+        availableTags={allTags}
+        totalCount={totalCount}
       />
 
       {/* Custom Fields Manager (admin+) */}
