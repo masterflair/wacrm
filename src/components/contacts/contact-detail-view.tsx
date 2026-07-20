@@ -79,7 +79,7 @@ export function ContactDetailView({
   // Tags tab
   const [allTags, setAllTags] = useState<Tag[]>([]);
   const [contactTagIds, setContactTagIds] = useState<string[]>([]);
-  const [savingTags, setSavingTags] = useState(false);
+  const [savingTagIds, setSavingTagIds] = useState<string[]>([]);
 
   // Notes tab
   const [notes, setNotes] = useState<ContactNote[]>([]);
@@ -226,24 +226,37 @@ export function ContactDetailView({
   }
 
   async function toggleTag(tagId: string) {
-    if (!contactId) return;
-    setSavingTags(true);
+    if (!contactId || savingTagIds.includes(tagId)) return;
 
     const isSelected = contactTagIds.includes(tagId);
+
+    // Optimistically update UI state
+    if (isSelected) {
+      setContactTagIds((prev) => prev.filter((id) => id !== tagId));
+    } else {
+      setContactTagIds((prev) => [...prev, tagId]);
+    }
+
+    setSavingTagIds((prev) => [...prev, tagId]);
 
     try {
       if (isSelected) {
         await deleteContactTag(contactId, tagId);
-        setContactTagIds((prev) => prev.filter((id) => id !== tagId));
       } else {
         await addContactTag(contactId, tagId);
-        setContactTagIds((prev) => [...prev, tagId]);
       }
       onUpdated();
     } catch (error) {
+      // Revert local state on failure
+      if (isSelected) {
+        setContactTagIds((prev) => [...prev, tagId]);
+      } else {
+        setContactTagIds((prev) => prev.filter((id) => id !== tagId));
+      }
       toast.error(error instanceof Error ? error.message : t('toastUpdateFailed'));
+    } finally {
+      setSavingTagIds((prev) => prev.filter((id) => id !== tagId));
     }
-    setSavingTags(false);
   }
 
   async function addNote() {
@@ -555,7 +568,6 @@ export function ContactDetailView({
                           <button
                             key={tag.id}
                             onClick={() => toggleTag(tag.id)}
-                            disabled={savingTags}
                             className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-medium transition-all cursor-pointer ${
                               selected
                                 ? 'ring-2 ring-primary ring-offset-1 ring-offset-border'
