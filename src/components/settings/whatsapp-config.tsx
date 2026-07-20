@@ -655,7 +655,7 @@ export function WhatsAppConfig() {
         </Card>
 
         {/* Advanced Setup / Manual */}
-        <Accordion type="single" collapsible className="w-full">
+        <Accordion className="w-full">
           <AccordionItem value="manual-setup" className="border-border">
             <AccordionTrigger className="text-foreground hover:text-foreground/80 hover:no-underline px-1">
               Advanced / Manual Setup
