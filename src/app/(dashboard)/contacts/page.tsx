@@ -366,22 +366,22 @@ export default function ContactsPage() {
           <GatedButton
             variant="outline"
             canAct={canEdit}
-            gateReason="add or import contacts"
-            onClick={() => setImportOpen(true)}
-            className="border-border text-muted-foreground hover:bg-muted"
-          >
-            <Download className="size-4" />
-            {t('importBtn')}
-          </GatedButton>
-          <GatedButton
-            variant="outline"
-            canAct={canEdit}
             gateReason="export contacts"
             onClick={() => setExportOpen(true)}
             className="border-border text-muted-foreground hover:bg-muted"
           >
             <Upload className="size-4" />
             {t('exportBtn')}
+          </GatedButton>
+          <GatedButton
+            variant="outline"
+            canAct={canEdit}
+            gateReason="add or import contacts"
+            onClick={() => setImportOpen(true)}
+            className="border-border text-muted-foreground hover:bg-muted"
+          >
+            <Download className="size-4" />
+            {t('importBtn')}
           </GatedButton>
           <GatedButton
             canAct={canEdit}
