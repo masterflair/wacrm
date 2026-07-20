@@ -416,75 +416,82 @@ export function ContactDetailView({
       .join('')
       .toUpperCase()
       .slice(0, 2);
-  }
-
-  return (
+  }  return (
     <>
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent
         side="right"
-        className="bg-popover border-border text-popover-foreground sm:max-w-lg w-full p-0"
+        className="bg-card/95 border-l border-border/80 text-popover-foreground sm:max-w-lg w-full p-0 shadow-2xl backdrop-blur-md"
       >
         {loading || !contact ? (
           <div className="flex items-center justify-center h-full">
             <Loader2 className="size-6 animate-spin text-primary" />
           </div>
         ) : (
-          <div className="flex flex-col h-full">
+          <div className="flex flex-col h-full bg-background/50">
             {/* Header */}
-            <SheetHeader className="p-4 border-b border-border/50">
-              <div className="flex items-center gap-3">
-                <Avatar className="size-12 bg-muted border border-border">
-                  <AvatarFallback className="bg-primary/10 text-primary text-sm font-medium">
-                    {getInitials(contact.name)}
-                  </AvatarFallback>
-                </Avatar>
-                <div className="flex-1 min-w-0">
-                  <SheetTitle className="text-popover-foreground truncate">
+            <SheetHeader className="p-6 border-b border-border/40 bg-muted/10 relative overflow-hidden shrink-0">
+              {/* Subtle background glow */}
+              <div className="absolute top-0 right-0 w-24 h-24 bg-primary/10 rounded-full blur-2xl pointer-events-none" />
+              
+              <div className="flex items-start gap-4">
+                <div className="relative group">
+                  <div className="absolute -inset-0.5 bg-gradient-to-r from-primary to-purple-600 rounded-full blur opacity-30 group-hover:opacity-50 transition duration-300" />
+                  <Avatar className="size-14 relative bg-card border border-border/50">
+                    <AvatarFallback className="bg-gradient-to-br from-primary/20 to-purple-600/10 text-primary text-base font-semibold">
+                      {getInitials(contact.name)}
+                    </AvatarFallback>
+                  </Avatar>
+                </div>
+                
+                <div className="flex-1 min-w-0 space-y-1.5">
+                  <SheetTitle className="text-xl font-bold text-foreground tracking-tight truncate">
                     {contact.name || t('unnamed')}
                   </SheetTitle>
-                  <SheetDescription className="text-muted-foreground text-xs mt-0.5">
-                    {t('contactDetailsDesc')}
-                  </SheetDescription>
-                  <div className="flex flex-wrap items-center gap-3 mt-1.5 text-xs text-muted-foreground">
+                  
+                  <div className="flex flex-col gap-2 text-xs text-muted-foreground">
                     <button
                       onClick={copyPhone}
-                      className="flex items-center gap-1 hover:text-primary transition-colors cursor-pointer"
+                      className="flex items-center gap-1.5 hover:text-foreground transition-colors cursor-pointer w-fit font-mono bg-muted/60 hover:bg-muted px-2 py-0.5 rounded border border-border/30"
                     >
                       <Phone className="size-3" />
                       {contact.phone}
                       {copiedPhone ? (
                         <Check className="size-3 text-primary" />
                       ) : (
-                        <Copy className="size-3" />
+                        <Copy className="size-3 opacity-60" />
                       )}
                     </button>
-                    {contact.email && (
-                      <span className="flex items-center gap-1">
-                        <Mail className="size-3" />
-                        {contact.email}
-                      </span>
-                    )}
-                    {contact.company && (
-                      <span className="flex items-center gap-1">
-                        <Building2 className="size-3" />
-                        {contact.company}
-                      </span>
-                    )}
+                    
+                    <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+                      {contact.email && (
+                        <span className="flex items-center gap-1.5">
+                          <Mail className="size-3.5 opacity-70" />
+                          {contact.email}
+                        </span>
+                      )}
+                      {contact.company && (
+                        <span className="flex items-center gap-1.5">
+                          <Building2 className="size-3.5 opacity-70" />
+                          {contact.company}
+                        </span>
+                      )}
+                    </div>
                   </div>
                 </div>
               </div>
-              <div className="mt-3">
+              
+              <div className="mt-4 flex gap-2">
                 <Button
                   size="sm"
                   onClick={() => setTemplatePickerOpen(true)}
                   disabled={sendingTemplate}
-                  className="bg-primary text-primary-foreground hover:bg-primary/90"
+                  className="bg-primary hover:bg-primary/95 text-primary-foreground font-medium rounded-lg px-4"
                 >
                   {sendingTemplate ? (
-                    <Loader2 className="size-4 animate-spin" />
+                    <Loader2 className="size-3.5 animate-spin" />
                   ) : (
-                    <LayoutTemplate className="size-4" />
+                    <LayoutTemplate className="size-3.5 mr-1.5" />
                   )}
                   {t('sendTemplateBtn')}
                 </Button>
@@ -493,86 +500,86 @@ export function ContactDetailView({
 
             {/* Tabs */}
             <Tabs defaultValue="details" className="flex-1 flex flex-col min-h-0">
-              <TabsList className="bg-muted/50 border-b border-border mx-4 mt-3">
+              <TabsList className="bg-muted/40 border border-border/40 p-1 mx-6 mt-4 rounded-xl gap-1 shrink-0">
                 <TabsTrigger
                   value="details"
-                  className="data-active:bg-muted data-active:text-primary text-muted-foreground"
+                  className="rounded-lg px-3 py-1.5 text-xs font-medium transition-all data-active:bg-background data-active:text-foreground data-active:shadow-sm text-muted-foreground hover:text-foreground"
                 >
                   {t('tabs.details')}
                 </TabsTrigger>
                 <TabsTrigger
                   value="tags"
-                  className="data-active:bg-muted data-active:text-primary text-muted-foreground"
+                  className="rounded-lg px-3 py-1.5 text-xs font-medium transition-all data-active:bg-background data-active:text-foreground data-active:shadow-sm text-muted-foreground hover:text-foreground"
                 >
                   {t('tabs.tags', { fallback: 'Tags' })}
                 </TabsTrigger>
                 <TabsTrigger
                   value="notes"
-                  className="data-active:bg-muted data-active:text-primary text-muted-foreground"
+                  className="rounded-lg px-3 py-1.5 text-xs font-medium transition-all data-active:bg-background data-active:text-foreground data-active:shadow-sm text-muted-foreground hover:text-foreground"
                 >
                   {t('tabs.notes')}
                 </TabsTrigger>
                 <TabsTrigger
                   value="custom"
-                  className="data-active:bg-muted data-active:text-primary text-muted-foreground"
+                  className="rounded-lg px-3 py-1.5 text-xs font-medium transition-all data-active:bg-background data-active:text-foreground data-active:shadow-sm text-muted-foreground hover:text-foreground"
                 >
                   {t('tabs.custom')}
                 </TabsTrigger>
                 <TabsTrigger
                   value="deals"
-                  className="data-active:bg-muted data-active:text-primary text-muted-foreground"
+                  className="rounded-lg px-3 py-1.5 text-xs font-medium transition-all data-active:bg-background data-active:text-foreground data-active:shadow-sm text-muted-foreground hover:text-foreground"
                 >
                   {t('tabs.deals')}
                 </TabsTrigger>
               </TabsList>
 
               {/* Details Tab */}
-              <TabsContent value="details" className="flex-1 overflow-y-auto px-4 py-3">
-                <div className="space-y-3">
+              <TabsContent value="details" className="flex-1 overflow-y-auto p-6 space-y-4">
+                <div className="bg-card border border-border/50 rounded-xl p-4 space-y-4">
                   <div className="space-y-1.5">
-                    <Label className="text-muted-foreground text-xs">{t('company', { fallback: 'Name' })}</Label>
+                    <Label className="text-xs font-semibold text-muted-foreground tracking-wider uppercase">{t('nameLabel', { fallback: 'Name' })}</Label>
                     <Input
                       value={editName}
                       onChange={(e) => setEditName(e.target.value)}
-                      className="bg-muted border-border text-foreground h-8 text-sm"
+                      className="bg-background border-border/80 focus:border-primary/50 text-foreground h-9 text-sm rounded-lg"
                     />
                   </div>
                   <div className="space-y-1.5">
-                    <Label className="text-muted-foreground text-xs">
+                    <Label className="text-xs font-semibold text-muted-foreground tracking-wider uppercase">
                       {t('phone')} <span className="text-red-400">*</span>
                     </Label>
                     <Input
                       value={editPhone}
                       onChange={(e) => setEditPhone(e.target.value)}
-                      className="bg-muted border-border text-foreground h-8 text-sm"
+                      className="bg-background border-border/80 focus:border-primary/50 text-foreground h-9 text-sm rounded-lg"
                     />
                   </div>
                   <div className="space-y-1.5">
-                    <Label className="text-muted-foreground text-xs">{t('email')}</Label>
+                    <Label className="text-xs font-semibold text-muted-foreground tracking-wider uppercase">{t('email')}</Label>
                     <Input
                       value={editEmail}
                       onChange={(e) => setEditEmail(e.target.value)}
-                      className="bg-muted border-border text-foreground h-8 text-sm"
+                      className="bg-background border-border/80 focus:border-primary/50 text-foreground h-9 text-sm rounded-lg"
                     />
                   </div>
                   <div className="space-y-1.5">
-                    <Label className="text-muted-foreground text-xs">{t('company')}</Label>
+                    <Label className="text-xs font-semibold text-muted-foreground tracking-wider uppercase">{t('company')}</Label>
                     <Input
                       value={editCompany}
                       onChange={(e) => setEditCompany(e.target.value)}
-                      className="bg-muted border-border text-foreground h-8 text-sm"
+                      className="bg-background border-border/80 focus:border-primary/50 text-foreground h-9 text-sm rounded-lg"
                     />
                   </div>
                   <Button
                     onClick={saveDetails}
                     disabled={savingDetails}
-                    className="bg-primary hover:bg-primary/90 text-primary-foreground w-full"
+                    className="bg-primary hover:bg-primary/90 text-primary-foreground w-full rounded-lg mt-2"
                     size="sm"
                   >
                     {savingDetails ? (
-                      <Loader2 className="size-3.5 animate-spin" />
+                      <Loader2 className="size-4 animate-spin mr-2" />
                     ) : (
-                      <Save className="size-3.5" />
+                      <Save className="size-4 mr-2" />
                     )}
                     {t('saveChangesBtn')}
                   </Button>
@@ -580,34 +587,45 @@ export function ContactDetailView({
               </TabsContent>
 
               {/* Tags Tab */}
-              <TabsContent value="tags" className="flex-1 overflow-y-auto px-4 py-3">
-                <div className="space-y-3">
-                  <p className="text-xs text-muted-foreground">
-                    {t('tagsTab.clickTagDesc')}
-                  </p>
+              <TabsContent value="tags" className="flex-1 overflow-y-auto p-6 space-y-4">
+                <div className="space-y-4">
+                  <div className="flex flex-col gap-1">
+                    <span className="text-xs font-semibold text-muted-foreground tracking-wider uppercase">
+                      Contact Tags
+                    </span>
+                    <span className="text-xs text-muted-foreground">
+                      {t('tagsTab.clickTagDesc')}
+                    </span>
+                  </div>
+                  
                   {allTags.length === 0 ? (
-                    <p className="text-sm text-muted-foreground">
+                    <p className="text-sm text-muted-foreground italic">
                       {t('tagsTab.noTagsAvailable')}
                     </p>
                   ) : (
-                    <div className="flex flex-wrap gap-2">
+                    <div className="flex flex-wrap gap-2.5">
                       {allTags.map((tag) => {
                         const selected = contactTagIds.includes(tag.id);
                         return (
                           <button
                             key={tag.id}
                             onClick={() => toggleTag(tag.id)}
-                            className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-medium transition-all cursor-pointer ${
+                            className={`inline-flex items-center gap-2 rounded-full px-3.5 py-1.5 text-xs font-medium transition-all duration-200 cursor-pointer border ${
                               selected
-                                ? 'ring-2 ring-primary ring-offset-1 ring-offset-border'
-                                : 'opacity-50 hover:opacity-80'
+                                ? 'scale-105 shadow-sm'
+                                : 'bg-transparent border-transparent hover:bg-muted/30 hover:border-border/50'
                             }`}
                             style={{
-                              backgroundColor: tag.color + '20',
-                              color: tag.color,
+                              backgroundColor: selected ? `${tag.color}22` : `${tag.color}08`,
+                              borderColor: selected ? tag.color : `${tag.color}25`,
+                              color: selected ? '#ffffff' : `${tag.color}cc`,
+                              boxShadow: selected ? `0 0 12px ${tag.color}25` : 'none',
                             }}
                           >
-                            {selected && <Check className="size-3 mr-1" />}
+                            <span 
+                              className={`size-1.5 rounded-full transition-transform duration-250 ${selected ? 'scale-125' : 'opacity-70'}`}
+                              style={{ backgroundColor: tag.color }}
+                            />
                             {tag.name}
                           </button>
                         );
@@ -618,64 +636,72 @@ export function ContactDetailView({
               </TabsContent>
 
               {/* Notes Tab */}
-              <TabsContent value="notes" className="flex-1 flex flex-col min-h-0 px-4 py-3">
-                <div className="space-y-2 mb-3">
+              <TabsContent value="notes" className="flex-1 flex flex-col min-h-0 p-6 space-y-4">
+                <div className="bg-card border border-border/50 rounded-xl p-4 space-y-3 shrink-0">
+                  <Label className="text-xs font-semibold text-muted-foreground tracking-wider uppercase">{t('notesTab.title')}</Label>
                   <Textarea
                     value={newNote}
                     onChange={(e) => setNewNote(e.target.value)}
                     placeholder={t('notesTab.placeholder')}
-                    className="bg-muted border-border text-foreground placeholder:text-muted-foreground min-h-[60px] text-sm resize-none"
+                    className="bg-background border-border/80 focus:border-primary/50 text-foreground placeholder:text-muted-foreground/60 min-h-[70px] text-sm resize-none rounded-lg p-3"
                   />
-                  <Button
-                    onClick={addNote}
-                    disabled={!newNote.trim() || savingNote}
-                    className="bg-primary hover:bg-primary/90 text-primary-foreground"
-                    size="sm"
-                  >
-                    {savingNote ? (
-                      <Loader2 className="size-3.5 animate-spin" />
-                    ) : (
-                      <Plus className="size-3.5" />
-                    )}
-                    {t('notesTab.save')}
-                  </Button>
+                  <div className="flex justify-end">
+                    <Button
+                      onClick={addNote}
+                      disabled={!newNote.trim() || savingNote}
+                      className="bg-primary hover:bg-primary/95 text-primary-foreground rounded-lg"
+                      size="sm"
+                    >
+                      {savingNote ? (
+                        <Loader2 className="size-3.5 animate-spin mr-1.5" />
+                      ) : (
+                        <Plus className="size-3.5 mr-1.5" />
+                      )}
+                      {t('notesTab.save')}
+                    </Button>
+                  </div>
                 </div>
 
-                <div className="flex-1 overflow-y-auto space-y-2">
+                <div className="flex-1 overflow-y-auto space-y-3 pr-1">
                   {loadingNotes ? (
-                    <div className="flex items-center justify-center py-8">
-                      <Loader2 className="size-5 animate-spin text-muted-foreground" />
+                    <div className="flex items-center justify-center py-12">
+                      <Loader2 className="size-6 animate-spin text-muted-foreground" />
                     </div>
                   ) : notes.length === 0 ? (
-                    <p className="text-sm text-muted-foreground text-center py-8">
-                      {t('notesTab.noNotes')}
-                    </p>
+                    <div className="text-center py-12 text-muted-foreground space-y-1">
+                      <p className="text-sm font-medium">{t('notesTab.noNotes')}</p>
+                      <p className="text-xs opacity-60">Notes are internal and only visible to your team.</p>
+                    </div>
                   ) : (
                     notes.map((note) => (
                       <div
                         key={note.id}
-                        className="rounded-lg bg-muted/50 border border-border/50 p-3 group"
+                        className="rounded-xl bg-card border border-border/40 p-4 group hover:border-border/80 transition-all duration-200 shadow-sm relative overflow-hidden"
                       >
-                        <div className="flex items-start justify-between gap-2">
-                          <p className="text-sm text-muted-foreground whitespace-pre-wrap flex-1">
+                        <div className="flex items-start justify-between gap-3">
+                          <p className="text-sm text-foreground/90 whitespace-pre-wrap flex-1 leading-relaxed">
                             {note.note_text}
                           </p>
                           <button
                             onClick={() => deleteNote(note.id)}
-                            className="opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-red-400 transition-all cursor-pointer shrink-0"
+                            className="opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-red-400 transition-all duration-200 cursor-pointer shrink-0 p-1 hover:bg-muted rounded"
                           >
-                            <Trash2 className="size-3.5" />
+                            <Trash2 className="size-4" />
                           </button>
                         </div>
-                        <p className="text-xs text-muted-foreground mt-1.5">
-                          {new Date(note.created_at).toLocaleDateString('en-US', {
-                            month: 'short',
-                            day: 'numeric',
-                            year: 'numeric',
-                            hour: '2-digit',
-                            minute: '2-digit',
-                          })}
-                        </p>
+                        <div className="flex items-center gap-2 mt-3 text-[10px] text-muted-foreground border-t border-border/30 pt-2">
+                          <span className="bg-muted px-1.5 py-0.5 rounded font-medium">Internal Note</span>
+                          <span>•</span>
+                          <span>
+                            {new Date(note.created_at).toLocaleDateString('en-US', {
+                              month: 'short',
+                              day: 'numeric',
+                              year: 'numeric',
+                              hour: '2-digit',
+                              minute: '2-digit',
+                            })}
+                          </span>
+                        </div>
                       </div>
                     ))
                   )}
@@ -683,20 +709,20 @@ export function ContactDetailView({
               </TabsContent>
 
               {/* Custom Fields Tab */}
-              <TabsContent value="custom" className="flex-1 overflow-y-auto px-4 py-3">
+              <TabsContent value="custom" className="flex-1 overflow-y-auto p-6 space-y-4">
                 {loadingCustom ? (
-                  <div className="flex items-center justify-center py-8">
-                    <Loader2 className="size-5 animate-spin text-muted-foreground" />
+                  <div className="flex items-center justify-center py-12">
+                    <Loader2 className="size-6 animate-spin text-muted-foreground" />
                   </div>
                 ) : customFields.length === 0 ? (
-                  <p className="text-sm text-muted-foreground text-center py-8">
-                    {t('noCustomFields')}
-                  </p>
+                  <div className="text-center py-12 text-muted-foreground">
+                    <p className="text-sm font-medium">{t('noCustomFields')}</p>
+                  </div>
                 ) : (
-                  <div className="space-y-3">
+                  <div className="bg-card border border-border/50 rounded-xl p-4 space-y-4">
                     {customFields.map((field) => (
                       <div key={field.id} className="space-y-1.5">
-                        <Label className="text-muted-foreground text-xs capitalize">
+                        <Label className="text-xs font-semibold text-muted-foreground tracking-wider uppercase capitalize">
                           {field.field_name}
                         </Label>
                         <Input
@@ -708,20 +734,20 @@ export function ContactDetailView({
                             }))
                           }
                           placeholder={t('enterCustomField', { name: field.field_name })}
-                          className="bg-muted border-border text-foreground h-8 text-sm placeholder:text-muted-foreground"
+                          className="bg-background border-border/80 focus:border-primary/50 text-foreground h-9 text-sm rounded-lg placeholder:text-muted-foreground/60"
                         />
                       </div>
                     ))}
                     <Button
                       onClick={saveCustomFields}
                       disabled={savingCustom}
-                      className="bg-primary hover:bg-primary/90 text-primary-foreground w-full"
+                      className="bg-primary hover:bg-primary/90 text-primary-foreground w-full rounded-lg mt-2"
                       size="sm"
                     >
                       {savingCustom ? (
-                        <Loader2 className="size-3.5 animate-spin" />
+                        <Loader2 className="size-4 animate-spin mr-2" />
                       ) : (
-                        <Save className="size-3.5" />
+                        <Save className="size-4 mr-2" />
                       )}
                       {t('saveCustomFieldsBtn')}
                     </Button>
@@ -730,39 +756,43 @@ export function ContactDetailView({
               </TabsContent>
 
               {/* Deals Tab */}
-              <TabsContent value="deals" className="flex-1 overflow-y-auto px-4 py-3">
+              <TabsContent value="deals" className="flex-1 overflow-y-auto p-6 space-y-3">
                 {loadingDeals ? (
-                  <div className="flex items-center justify-center py-8">
-                    <Loader2 className="size-5 animate-spin text-primary" />
+                  <div className="flex items-center justify-center py-12">
+                    <Loader2 className="size-6 animate-spin text-primary" />
                   </div>
                 ) : deals.length === 0 ? (
-                  <p className="text-xs text-muted-foreground">{t('dealsTab.noDeals')}</p>
+                  <div className="text-center py-12 text-muted-foreground">
+                    <p className="text-sm font-medium">{t('dealsTab.noDeals')}</p>
+                  </div>
                 ) : (
-                  <div className="space-y-2">
+                  <div className="space-y-3">
                     {deals.map((deal) => (
                       <div
                         key={deal.id}
-                        className="rounded-lg border border-border bg-muted/50 p-3"
+                        className="rounded-xl border border-border/40 bg-card p-4 hover:border-border/80 transition-all duration-200 shadow-sm relative overflow-hidden group"
                       >
-                        <div className="flex items-start justify-between gap-2">
-                          <p className="text-sm font-medium text-foreground">
+                        <div className="absolute top-0 left-0 w-1 h-full bg-primary/70" />
+                        <div className="flex items-start justify-between gap-3">
+                          <p className="text-sm font-bold text-foreground/90 group-hover:text-primary transition-colors">
                             {deal.title}
                           </p>
                           {deal.stage && (
                             <span
-                              className="shrink-0 rounded-full px-1.5 py-0.5 text-[10px] font-medium"
+                              className="shrink-0 rounded-full px-2 py-0.5 text-[10px] font-semibold tracking-wider uppercase"
                               style={{
-                                backgroundColor: `${deal.stage.color}20`,
+                                backgroundColor: `${deal.stage.color}15`,
                                 color: deal.stage.color,
+                                border: `1px solid ${deal.stage.color}30`
                               }}
                             >
                               {deal.stage.name}
                             </span>
                           )}
                         </div>
-                        <div className="mt-1.5 flex items-center justify-between text-xs text-muted-foreground">
-                          <span className="flex items-center gap-1">
-                            <DollarSign className="size-3" />
+                        <div className="mt-3 flex items-center justify-between text-xs text-muted-foreground border-t border-border/30 pt-3">
+                          <span className="flex items-center gap-1 font-mono font-medium text-foreground">
+                            <DollarSign className="size-3.5 text-muted-foreground" />
                             {formatCurrency(
                               deal.value ?? 0,
                               deal.currency || defaultCurrency,
@@ -770,11 +800,11 @@ export function ContactDetailView({
                           </span>
                           {deal.status && deal.status !== 'open' && (
                             <span
-                              className={
+                              className={`rounded px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider ${
                                 deal.status === 'won'
-                                  ? 'text-primary'
-                                  : 'text-red-400'
-                              }
+                                  ? 'bg-primary/10 text-primary border border-primary/20'
+                                  : 'bg-red-500/10 text-red-400 border border-red-500/20'
+                              }`}
                             >
                               {deal.status}
                             </span>
