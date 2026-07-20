@@ -6,11 +6,8 @@ export async function GET(request: Request) {
   const code = searchParams.get('code');
   const next = searchParams.get('next') ?? '/dashboard';
 
-  // Resolve the correct public origin (handles proxies/Vercel/Hostinger)
+  // Resolve the correct public origin (handles proxies/Vercel/Hostinger/localhost)
   const getOrigin = () => {
-    const explicit = process.env.NEXT_PUBLIC_SITE_URL?.trim();
-    if (explicit) return explicit.replace(/\/+$/, "");
-
     const forwardedHost = request.headers.get("x-forwarded-host")?.split(",")[0]?.trim();
     const forwardedProto = request.headers.get("x-forwarded-proto")?.split(",")[0]?.trim();
     if (forwardedHost) {
@@ -22,6 +19,10 @@ export async function GET(request: Request) {
       const reqProto = new URL(request.url).protocol.replace(":", "");
       return `${reqProto}://${host}`;
     }
+
+    const explicit = process.env.NEXT_PUBLIC_SITE_URL?.trim();
+    if (explicit) return explicit.replace(/\/+$/, "");
+
     return new URL(request.url).origin;
   };
 
