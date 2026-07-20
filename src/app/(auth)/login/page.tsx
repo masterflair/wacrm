@@ -210,7 +210,7 @@ function LoginPageInner() {
             className="h-10 w-full border-border bg-background/40 hover:bg-muted/65 text-foreground hover:text-foreground font-semibold rounded-lg transition-all duration-200 active:scale-[0.98] shadow-sm hover:shadow-[0_0_12px_rgba(255,255,255,0.03)] flex items-center justify-center"
           >
             <GoogleIcon />
-            {t('signInWithGoogle', { fallback: 'Sign in with Google' })}
+            Google
           </Button>
 
           <p className="mt-6 text-center text-sm text-muted-foreground">
