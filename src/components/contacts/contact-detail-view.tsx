@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import { addContactTag, deleteContactTag } from '@/lib/contacts/tag-api';
 import { useAuth } from '@/hooks/use-auth';
@@ -79,7 +79,9 @@ export function ContactDetailView({
   // Tags tab
   const [allTags, setAllTags] = useState<Tag[]>([]);
   const [contactTagIds, setContactTagIds] = useState<string[]>([]);
-  const [savingTagIds, setSavingTagIds] = useState<string[]>([]);
+  const targetTagIdsRef = useRef<string[]>([]);
+  const savedTagIdsRef = useRef<string[]>([]);
+  const isSyncingRef = useRef(false);
 
   // Notes tab
   const [notes, setNotes] = useState<ContactNote[]>([]);
@@ -127,7 +129,10 @@ export function ContactDetailView({
 
     if (tagsRes.data) setAllTags(tagsRes.data);
     if (contactTagsRes.data) {
-      setContactTagIds(contactTagsRes.data.map((ct) => ct.tag_id));
+      const ids = contactTagsRes.data.map((ct) => ct.tag_id);
+      setContactTagIds(ids);
+      targetTagIdsRef.current = ids;
+      savedTagIdsRef.current = ids;
     }
   }, [contactId, supabase]);
 
@@ -225,38 +230,62 @@ export function ContactDetailView({
     setSavingDetails(false);
   }
 
-  async function toggleTag(tagId: string) {
-    if (!contactId || savingTagIds.includes(tagId)) return;
-
-    const isSelected = contactTagIds.includes(tagId);
-
-    // Optimistically update UI state
-    if (isSelected) {
-      setContactTagIds((prev) => prev.filter((id) => id !== tagId));
-    } else {
-      setContactTagIds((prev) => [...prev, tagId]);
-    }
-
-    setSavingTagIds((prev) => [...prev, tagId]);
+  const triggerSync = useCallback(async () => {
+    if (!contactId || isSyncingRef.current) return;
+    isSyncingRef.current = true;
 
     try {
-      if (isSelected) {
-        await deleteContactTag(contactId, tagId);
-      } else {
-        await addContactTag(contactId, tagId);
+      while (true) {
+        const target = targetTagIdsRef.current;
+        const saved = savedTagIdsRef.current;
+
+        // Find a tag that needs to be added
+        const toAdd = target.find((id) => !saved.includes(id));
+        if (toAdd) {
+          await addContactTag(contactId, toAdd);
+          savedTagIdsRef.current = [...saved, toAdd];
+          onUpdated();
+          continue;
+        }
+
+        // Find a tag that needs to be removed
+        const toRemove = saved.find((id) => !target.includes(id));
+        if (toRemove) {
+          await deleteContactTag(contactId, toRemove);
+          savedTagIdsRef.current = saved.filter((id) => id !== toRemove);
+          onUpdated();
+          continue;
+        }
+
+        break;
       }
-      onUpdated();
     } catch (error) {
-      // Revert local state on failure
-      if (isSelected) {
-        setContactTagIds((prev) => [...prev, tagId]);
-      } else {
-        setContactTagIds((prev) => prev.filter((id) => id !== tagId));
-      }
-      toast.error(error instanceof Error ? error.message : t('toastUpdateFailed'));
+      console.error('Failed to sync tags:', error);
+      toast.error(t('toastUpdateFailed'));
+      // Revert UI to last saved database state
+      setContactTagIds(savedTagIdsRef.current);
+      targetTagIdsRef.current = savedTagIdsRef.current;
     } finally {
-      setSavingTagIds((prev) => prev.filter((id) => id !== tagId));
+      isSyncingRef.current = false;
     }
+  }, [contactId, onUpdated, t]);
+
+  function toggleTag(tagId: string) {
+    if (!contactId) return;
+
+    const isSelected = contactTagIds.includes(tagId);
+    let newIds: string[];
+
+    if (isSelected) {
+      newIds = contactTagIds.filter((id) => id !== tagId);
+    } else {
+      newIds = [...contactTagIds, tagId];
+    }
+
+    setContactTagIds(newIds);
+    targetTagIdsRef.current = newIds;
+
+    triggerSync();
   }
 
   async function addNote() {
