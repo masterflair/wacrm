@@ -14,6 +14,7 @@ import {
   AlertTriangle,
   RotateCcw,
 } from 'lucide-react';
+import Script from 'next/script';
 import { createClient } from '@/lib/supabase/client';
 import { useAuth } from '@/hooks/use-auth';
 import { useTranslations } from 'next-intl';
@@ -36,6 +37,12 @@ const MASKED_TOKEN = '••••••••••••••••';
 type ConnectionStatus = 'connected' | 'disconnected' | 'unknown';
 type ResetReason = 'token_corrupted' | 'meta_api_error' | null;
 
+const FacebookIcon = ({ className }: { className?: string }) => (
+  <svg className={className} fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+    <path fillRule="evenodd" d="M22 12c0-5.523-4.477-10-10-10S2 6.477 2 12c0 4.991 3.657 9.128 8.438 9.878v-6.987h-2.54V12h2.54V9.797c0-2.506 1.492-3.89 3.777-3.89 1.094 0 2.238.195 2.238.195v2.46h-1.26c-1.243 0-1.63.771-1.63 1.562V12h2.773l-.443 2.89h-2.33v6.988C18.343 21.128 22 16.991 22 12z" clipRule="evenodd" />
+  </svg>
+);
+
 export function WhatsAppConfig() {
   const t = useTranslations('Settings.whatsapp');
   const supabase = createClient();
@@ -55,6 +62,8 @@ export function WhatsAppConfig() {
   const [connectionStatus, setConnectionStatus] = useState<ConnectionStatus>('unknown');
   const [resetReason, setResetReason] = useState<ResetReason>(null);
   const [statusMessage, setStatusMessage] = useState<string>('');
+  const [isFacebookSdkLoaded, setIsFacebookSdkLoaded] = useState(false);
+  const [connectingFacebook, setConnectingFacebook] = useState(false);
   // Guards against re-hydrating the form when the load effect below
   // re-runs for reasons unrelated to actually switching accounts —
   // e.g. Supabase's onAuthStateChange fires a token refresh (new
@@ -366,6 +375,54 @@ export function WhatsAppConfig() {
     }
   }
 
+  async function handleFacebookLogin() {
+    if (!isFacebookSdkLoaded || !(window as any).FB) {
+      toast.error('Facebook SDK is still loading. Please try again in a moment.');
+      return;
+    }
+
+    setConnectingFacebook(true);
+
+    (window as any).FB.login(
+      async (response: any) => {
+        if (response.authResponse && response.authResponse.accessToken) {
+          try {
+            const res = await fetch('/api/whatsapp/oauth', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({
+                accessToken: response.authResponse.accessToken,
+              }),
+            });
+            const data = await res.json();
+            
+            if (!res.ok) {
+              toast.error(data.error || 'Failed to link WhatsApp account');
+              return;
+            }
+
+            toast.success('WhatsApp connected successfully!');
+            if (accountId) await fetchConfig(accountId);
+          } catch (err) {
+            console.error('OAuth error:', err);
+            toast.error('Failed to link WhatsApp account');
+          } finally {
+            setConnectingFacebook(false);
+          }
+        } else {
+          setConnectingFacebook(false);
+          toast.error('Facebook login was cancelled or failed.');
+        }
+      },
+      {
+        scope: 'whatsapp_business_management,whatsapp_business_messaging',
+        return_scopes: true,
+      }
+    );
+  }
+
   function handleCopyWebhookUrl() {
     navigator.clipboard.writeText(webhookUrl);
     toast.success('Webhook URL copied to clipboard');
@@ -388,8 +445,24 @@ export function WhatsAppConfig() {
   const showResetBanner = resetReason === 'token_corrupted';
 
   return (
-    <section className="animate-in fade-in-50 duration-200">
-      <SettingsPanelHead
+    <>
+      <Script
+        src="https://connect.facebook.net/en_US/sdk.js"
+        strategy="lazyOnload"
+        onLoad={() => {
+          if ((window as any).FB) {
+            (window as any).FB.init({
+              appId: process.env.NEXT_PUBLIC_FACEBOOK_APP_ID || '',
+              cookie: true,
+              xfbml: true,
+              version: 'v20.0'
+            });
+            setIsFacebookSdkLoaded(true);
+          }
+        }}
+      />
+      <section className="animate-in fade-in-50 duration-200">
+        <SettingsPanelHead
         title={t("title")}
         description={t("description")}
       />
@@ -554,8 +627,42 @@ export function WhatsAppConfig() {
           </Alert>
         )}
 
-        {/* API Credentials */}
-        <Card>
+        {/* Automated Setup */}
+        <Card className="border-primary/20 bg-primary/5">
+          <CardHeader>
+            <CardTitle className="text-foreground flex items-center gap-2">
+              <FacebookIcon className="size-5 text-[#1877F2]" />
+              Connect WhatsApp
+            </CardTitle>
+            <CardDescription className="text-muted-foreground">
+              Automated setup (Recommended). Connect your Meta account directly to configure everything in 3 clicks.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Button
+              onClick={handleFacebookLogin}
+              disabled={connectingFacebook}
+              className="w-full sm:w-auto bg-[#1877F2] hover:bg-[#1877F2]/90 text-white gap-2"
+            >
+              {connectingFacebook ? (
+                <Loader2 className="size-4 animate-spin" />
+              ) : (
+                <FacebookIcon className="size-4 fill-current" />
+              )}
+              Log in with Facebook
+            </Button>
+          </CardContent>
+        </Card>
+
+        {/* Advanced Setup / Manual */}
+        <Accordion type="single" collapsible className="w-full">
+          <AccordionItem value="manual-setup" className="border-border">
+            <AccordionTrigger className="text-foreground hover:text-foreground/80 hover:no-underline px-1">
+              Advanced / Manual Setup
+            </AccordionTrigger>
+            <AccordionContent className="space-y-6 pt-4 px-1 pb-1">
+              {/* API Credentials */}
+              <Card>
           <CardHeader>
             <CardTitle className="text-foreground">{t('apiCredentialsTitle')}</CardTitle>
             <CardDescription className="text-muted-foreground">
@@ -682,6 +789,9 @@ export function WhatsAppConfig() {
             </div>
           </CardContent>
         </Card>
+            </AccordionContent>
+          </AccordionItem>
+        </Accordion>
 
         {/* Action Buttons */}
         <div className="flex flex-wrap gap-3">
@@ -760,7 +870,7 @@ export function WhatsAppConfig() {
                 </AccordionTrigger>
                 <AccordionContent className="text-muted-foreground">
                   <ol className="list-decimal list-inside space-y-1 text-sm">
-                    <li dangerouslySetInnerHTML={{ __html: t('step1_1') }} />
+                    <li dangerouslySetInnerHTML={{ __html: t.raw('step1_1') }} />
                     <li>{t('step1_2')}</li>
                     <li>{t('step1_3')}</li>
                     <li>{t('step1_4')}</li>
@@ -794,9 +904,9 @@ export function WhatsAppConfig() {
                 <AccordionContent className="text-muted-foreground">
                   <ol className="list-decimal list-inside space-y-1 text-sm">
                     <li>{t('step3_1')}</li>
-                    <li dangerouslySetInnerHTML={{ __html: t('step3_2') }} />
-                    <li dangerouslySetInnerHTML={{ __html: t('step3_3') }} />
-                    <li dangerouslySetInnerHTML={{ __html: t('step3_4') }} />
+                    <li dangerouslySetInnerHTML={{ __html: t.raw('step3_2') }} />
+                    <li dangerouslySetInnerHTML={{ __html: t.raw('step3_3') }} />
+                    <li dangerouslySetInnerHTML={{ __html: t.raw('step3_4') }} />
                   </ol>
                 </AccordionContent>
               </AccordionItem>
@@ -812,8 +922,8 @@ export function WhatsAppConfig() {
                   <ol className="list-decimal list-inside space-y-1 text-sm">
                     <li>{t('step4_1')}</li>
                     <li>{t('step4_2')}</li>
-                    <li dangerouslySetInnerHTML={{ __html: t('step4_3') }} />
-                    <li dangerouslySetInnerHTML={{ __html: t('step4_4') }} />
+                    <li dangerouslySetInnerHTML={{ __html: t.raw('step4_3') }} />
+                    <li dangerouslySetInnerHTML={{ __html: t.raw('step4_4') }} />
                     <li>{t('step4_5')}</li>
                   </ol>
                 </AccordionContent>
@@ -836,5 +946,6 @@ export function WhatsAppConfig() {
       </div>
     </div>
     </section>
+    </>
   );
 }
