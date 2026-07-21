@@ -49,9 +49,8 @@ function DashboardShellInner({ children }: { children: React.ReactNode }) {
       <Sidebar open={sidebarOpen} onClose={closeSidebar} />
       <div className="flex flex-1 flex-col overflow-hidden">
         <Header onOpenSidebar={() => setSidebarOpen(true)} />
-        {/* Thinner horizontal padding on mobile so cards have room to breathe. */}
-        <main className={`flex-1 p-4 sm:p-6 flex flex-col ${isInbox ? "overflow-hidden" : "overflow-y-auto"}`}>
-          <div className="flex-1">
+        <main className={`flex-1 flex flex-col ${isInbox ? "p-0 overflow-hidden" : "p-4 sm:p-6 overflow-y-auto"}`}>
+          <div className={`flex-1 ${isInbox ? "h-full flex flex-col overflow-hidden" : ""}`}>
             {children}
           </div>
         </main>
