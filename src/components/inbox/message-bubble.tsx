@@ -21,6 +21,7 @@ import { MessageReactions } from "./message-reactions";
 import { InteractivePreview } from "@/components/interactive/interactive-preview";
 import { InteractiveImageViewer } from "./interactive-image-viewer";
 import { useTranslations } from "next-intl";
+import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
 
 interface MessageBubbleProps {
   message: Message;
@@ -191,23 +192,59 @@ function MessageContent({ message, t, onSendEditedMedia }: { message: Message, t
         </div>
       );
 
-    case "document":
+    case "document": {
       if (!message.media_url) {
         return <MediaUnavailable label={message.content_text || t("document")} t={t} />;
       }
+
+      const fileName = message.content_text || t("document");
+      const isPdf = fileName.toLowerCase().endsWith(".pdf") || message.media_url.toLowerCase().includes(".pdf");
+
+      const TriggerButton = (
+        <button
+          type="button"
+          className="flex max-w-full items-center gap-2 rounded-lg bg-muted/50 px-3 py-2 text-sm hover:bg-muted"
+        >
+          <FileText className="h-5 w-5 shrink-0 text-muted-foreground" />
+          <span className="truncate">{fileName}</span>
+        </button>
+      );
+
+      if (isPdf) {
+        return (
+          <Dialog>
+            <DialogTrigger asChild>
+              {TriggerButton}
+            </DialogTrigger>
+            <DialogContent className="max-w-4xl w-[90vw] h-[90vh] p-0 flex flex-col overflow-hidden border-border bg-background">
+              <div className="flex items-center justify-between px-4 py-3 border-b border-border bg-muted/30">
+                <h3 className="font-semibold truncate pr-4 text-foreground">{fileName}</h3>
+                <a href={message.media_url} download target="_blank" rel="noopener noreferrer" className="text-sm text-primary hover:underline shrink-0">
+                  Download original
+                </a>
+              </div>
+              <iframe 
+                src={message.media_url} 
+                className="w-full flex-1 border-0 bg-white" 
+                title={fileName}
+              />
+            </DialogContent>
+          </Dialog>
+        );
+      }
+
       return (
         <a
           href={message.media_url}
           target="_blank"
           rel="noopener noreferrer"
-          className="flex items-center gap-2 rounded-lg bg-muted/50 px-3 py-2 text-sm hover:bg-muted"
+          className="flex max-w-full items-center gap-2 rounded-lg bg-muted/50 px-3 py-2 text-sm hover:bg-muted"
         >
           <FileText className="h-5 w-5 shrink-0 text-muted-foreground" />
-          <span className="truncate">
-            {message.content_text || t("document")}
-          </span>
+          <span className="truncate">{fileName}</span>
         </a>
       );
+    }
 
     case "template":
       return (
