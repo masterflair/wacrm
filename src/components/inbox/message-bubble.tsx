@@ -19,6 +19,12 @@ import { format } from "date-fns";
 import { ReplyQuote } from "./reply-quote";
 import { MessageReactions } from "./message-reactions";
 import { InteractivePreview } from "@/components/interactive/interactive-preview";
+import {
+  Dialog,
+  DialogContent,
+  DialogTrigger,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { useTranslations } from "next-intl";
 
 interface MessageBubbleProps {
@@ -110,12 +116,24 @@ function MediaImage({ url, alt }: { url: string; alt: string }) {
   }
 
   return (
-    <img
-      src={src ?? ""}
-      alt={alt}
-      className="max-h-64 max-w-60 rounded-lg object-cover"
-      onError={() => setError(true)}
-    />
+    <Dialog>
+      <DialogTrigger className="block cursor-zoom-in overflow-hidden rounded-lg outline-none focus-visible:ring-2 focus-visible:ring-ring">
+        <img
+          src={src ?? ""}
+          alt={alt}
+          className="max-h-64 max-w-60 rounded-lg object-cover transition-transform hover:scale-[1.02]"
+          onError={() => setError(true)}
+        />
+      </DialogTrigger>
+      <DialogContent className="flex max-w-4xl max-h-[90vh] items-center justify-center border-none bg-transparent p-0 shadow-none">
+        <DialogTitle className="sr-only">Image Preview</DialogTitle>
+        <img
+          src={src ?? ""}
+          alt={alt}
+          className="max-h-[85vh] w-auto max-w-full rounded-lg object-contain"
+        />
+      </DialogContent>
+    </Dialog>
   );
 }
 
