@@ -14,6 +14,7 @@ import {
   ImageOff,
   CornerDownLeft,
   Sparkles,
+  Download,
 } from "lucide-react";
 import { format } from "date-fns";
 import { ReplyQuote } from "./reply-quote";
@@ -216,18 +217,22 @@ function MessageContent({ message, t, onSendEditedMedia }: { message: Message, t
             <DialogTrigger asChild>
               {TriggerButton}
             </DialogTrigger>
-            <DialogContent className="max-w-4xl w-[90vw] h-[90vh] p-0 flex flex-col overflow-hidden border-border bg-background">
-              <div className="flex items-center justify-between px-4 py-3 border-b border-border bg-muted/30">
-                <h3 className="font-semibold truncate pr-4 text-foreground">{fileName}</h3>
-                <a href={message.media_url} download target="_blank" rel="noopener noreferrer" className="text-sm text-primary hover:underline shrink-0">
-                  Download original
-                </a>
+            <DialogContent className="max-w-[100vw] max-h-[100vh] w-screen h-screen p-0 flex flex-col overflow-hidden border-none bg-black/95 rounded-none sm:rounded-none">
+              <div className="flex items-center justify-between px-4 py-3 bg-black/50 text-white">
+                <h3 className="font-semibold truncate pr-4">{fileName}</h3>
+                <div className="flex items-center gap-4 shrink-0 mr-8">
+                  <a href={message.media_url} download target="_blank" rel="noopener noreferrer" className="text-white/70 hover:text-white transition-colors" title="Download original">
+                    <Download className="h-5 w-5" />
+                  </a>
+                </div>
               </div>
-              <iframe 
-                src={message.media_url} 
-                className="w-full flex-1 border-0 bg-white" 
-                title={fileName}
-              />
+              <div className="flex-1 w-full max-w-5xl mx-auto h-full p-2 sm:p-4 pb-0 sm:pb-0 flex flex-col">
+                <iframe 
+                  src={message.media_url} 
+                  className="w-full flex-1 border-0 bg-white rounded-t-md" 
+                  title={fileName}
+                />
+              </div>
             </DialogContent>
           </Dialog>
         );
