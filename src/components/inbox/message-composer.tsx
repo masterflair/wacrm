@@ -604,7 +604,7 @@ export function MessageComposer({
   // ---- Render --------------------------------------------------------
 
   return (
-    <div className="absolute bottom-6 left-4 right-4 z-20 sm:left-1/2 sm:right-auto sm:w-[calc(100%-2rem)] sm:max-w-4xl sm:-translate-x-1/2 bg-black/60 backdrop-blur-2xl rounded-[32px] border border-white/10 shadow-[0_12px_40px_rgba(0,0,0,0.4)] px-2 py-1.5">
+    <div className="absolute bottom-0 left-0 right-0 z-20 sm:bottom-6 sm:left-1/2 sm:right-auto sm:w-[calc(100%-2rem)] sm:max-w-4xl sm:-translate-x-1/2 bg-card sm:bg-black/60 sm:backdrop-blur-2xl rounded-none sm:rounded-[32px] border-t border-border sm:border-white/10 sm:shadow-[0_12px_40px_rgba(0,0,0,0.4)] px-2 pt-1.5 pb-[max(0.5rem,env(safe-area-inset-bottom))] sm:pb-1.5 transition-all">
       {slashMenuOpen && filteredSlashReplies.length > 0 && (
         <div className="absolute bottom-full left-4 mb-2 w-80 rounded-xl border border-border bg-popover text-popover-foreground shadow-lg outline-none animate-in fade-in-80 zoom-in-95 z-50 overflow-hidden">
           <div className="px-3 py-2 text-xs font-semibold text-muted-foreground border-b border-border bg-muted/30">
@@ -672,6 +672,8 @@ export function MessageComposer({
       <input
         ref={imageInputRef}
         type="file"
+        tabIndex={-1}
+        aria-hidden="true"
         accept={PICKER_ACCEPT.image}
         className="hidden"
         onChange={(e) => {
@@ -682,6 +684,8 @@ export function MessageComposer({
       <input
         ref={videoInputRef}
         type="file"
+        tabIndex={-1}
+        aria-hidden="true"
         accept={PICKER_ACCEPT.video}
         className="hidden"
         onChange={(e) => {
@@ -692,6 +696,8 @@ export function MessageComposer({
       <input
         ref={documentInputRef}
         type="file"
+        tabIndex={-1}
+        aria-hidden="true"
         accept={PICKER_ACCEPT.document}
         className="hidden"
         onChange={(e) => {
