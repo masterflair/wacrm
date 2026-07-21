@@ -19,12 +19,7 @@ import { format } from "date-fns";
 import { ReplyQuote } from "./reply-quote";
 import { MessageReactions } from "./message-reactions";
 import { InteractivePreview } from "@/components/interactive/interactive-preview";
-import {
-  Dialog,
-  DialogContent,
-  DialogTrigger,
-  DialogTitle,
-} from "@/components/ui/dialog";
+import { InteractiveImageViewer } from "./interactive-image-viewer";
 import { useTranslations } from "next-intl";
 
 interface MessageBubbleProps {
@@ -34,6 +29,7 @@ interface MessageBubbleProps {
   reactions?: MessageReaction[];
   currentUserId?: string;
   onToggleReaction?: (emoji: string) => void;
+  onQuoteClick?: () => void;
 }
 
 function StatusIcon({ status }: { status: Message["status"] }) {
@@ -116,24 +112,18 @@ function MediaImage({ url, alt }: { url: string; alt: string }) {
   }
 
   return (
-    <Dialog>
-      <DialogTrigger className="block cursor-zoom-in overflow-hidden rounded-lg outline-none focus-visible:ring-2 focus-visible:ring-ring">
+    <InteractiveImageViewer
+      src={src ?? ""}
+      alt={alt}
+      triggerChildren={
         <img
           src={src ?? ""}
           alt={alt}
           className="max-h-64 max-w-60 rounded-lg object-cover transition-transform hover:scale-[1.02]"
           onError={() => setError(true)}
         />
-      </DialogTrigger>
-      <DialogContent className="flex max-w-4xl max-h-[90vh] items-center justify-center border-none bg-transparent p-0 shadow-none">
-        <DialogTitle className="sr-only">Image Preview</DialogTitle>
-        <img
-          src={src ?? ""}
-          alt={alt}
-          className="max-h-[85vh] w-auto max-w-full rounded-lg object-contain"
-        />
-      </DialogContent>
-    </Dialog>
+      }
+    />
   );
 }
 
@@ -279,9 +269,10 @@ function MessageContent({ message, t }: { message: Message, t: ReturnType<typeof
 export function MessageBubble({
   message,
   reply,
-  reactions,
+  reactions = [],
   currentUserId,
   onToggleReaction,
+  onQuoteClick,
 }: MessageBubbleProps) {
   const t = useTranslations("Inbox.bubble");
 
@@ -310,6 +301,7 @@ export function MessageBubble({
             authorLabel={reply.authorLabel}
             preview={reply.preview}
             onPrimary={isAgent}
+            onClick={onQuoteClick}
           />
         )}
         <MessageContent message={message} t={t} />

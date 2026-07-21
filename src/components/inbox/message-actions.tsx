@@ -17,6 +17,7 @@ import { useTranslations } from "next-intl";
 const QUICK_EMOJIS = ["👍", "❤️", "😂", "😮", "😢", "🙏"];
 
 interface MessageActionsProps {
+  id?: string;
   message: Message;
   onReply: () => void;
   onReact: (emoji: string) => void;
@@ -29,6 +30,7 @@ interface MessageActionsProps {
  * the bubble's render path is unaffected when the toolbar isn't visible.
  */
 export function MessageActions({
+  id,
   message,
   onReply,
   onReact,
@@ -81,6 +83,7 @@ export function MessageActions({
   // in the row no longer reveals the toolbar.
   return (
     <div
+      id={id}
       className={cn(
         "flex w-full",
         isAgent ? "justify-end" : "justify-start",

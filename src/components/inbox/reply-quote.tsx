@@ -19,6 +19,8 @@ interface ReplyQuoteProps {
    *  quote must read against the primary surface rather than the neutral
    *  foreground — otherwise it goes low-contrast in light mode. */
   onPrimary?: boolean;
+  /** Callback fired when the user clicks the quote block to navigate to it. */
+  onClick?: () => void;
 }
 
 export function ReplyQuote({
@@ -26,13 +28,16 @@ export function ReplyQuote({
   preview,
   onDismiss,
   onPrimary = false,
+  onClick,
 }: ReplyQuoteProps) {
   const t = useTranslations("Inbox.replyQuote");
   const isChip = !!onDismiss;
   return (
     <div
+      onClick={onClick}
       className={cn(
         "flex items-start gap-2 border-l-2 px-2 py-1",
+        onClick && "cursor-pointer hover:opacity-80 transition-opacity",
         onPrimary ? "border-primary-foreground/50" : "border-primary",
         isChip
           ? "rounded-md bg-muted/80"

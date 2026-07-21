@@ -1103,13 +1103,17 @@ export function MessageThread({
                     const parent = msg.reply_to_message_id
                       ? messagesById.get(msg.reply_to_message_id)
                       : null;
-                    const reply = parent
+                    const reply = msg.reply_to_message_id
                       ? {
-                          authorLabel:
-                            parent.sender_type === "agent" || parent.sender_type === "bot"
-                              ? t("me") 
-                              : contact?.name || contact?.phone || "Unknown",
-                          preview: buildReplyPreview(parent, tQuote),
+                          id: msg.reply_to_message_id,
+                          authorLabel: (() => {
+                            const r = messagesById.get(msg.reply_to_message_id);
+                            return r ? authorLabelFor(r) : "Unknown";
+                          })(),
+                          preview: (() => {
+                            const r = messagesById.get(msg.reply_to_message_id);
+                            return r ? buildReplyPreview(r, tQuote) : "Message unavailable";
+                          })(),
                         }
                       : null;
                     const msgReactions = reactionsByMessageId.get(msg.id);
@@ -1127,6 +1131,7 @@ export function MessageThread({
                     return (
                       <MessageActions
                         key={msg.id}
+                        id={`message-${msg.id}`}
                         message={msg}
                         onReply={() => handleStartReply(msg)}
                         onReact={(emoji) => {
@@ -1139,6 +1144,19 @@ export function MessageThread({
                           reactions={msgReactions}
                           currentUserId={user?.id}
                           onToggleReaction={handlePillToggle}
+                          onQuoteClick={() => {
+                            if (reply?.id) {
+                              const el = document.getElementById(`message-${reply.id}`);
+                              if (el) {
+                                el.scrollIntoView({ behavior: "smooth", block: "center" });
+                                // Optional highlight effect could be added here
+                                el.classList.add("bg-primary/10", "transition-colors", "duration-500", "rounded-xl");
+                                setTimeout(() => {
+                                  el.classList.remove("bg-primary/10");
+                                }, 1500);
+                              }
+                            }
+                          }}
                         />
                       </MessageActions>
                     );
