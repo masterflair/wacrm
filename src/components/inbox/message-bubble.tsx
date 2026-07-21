@@ -201,21 +201,12 @@ function MessageContent({ message, t, onSendEditedMedia }: { message: Message, t
       const fileName = message.content_text || t("document");
       const isPdf = fileName.toLowerCase().endsWith(".pdf") || message.media_url.toLowerCase().includes(".pdf");
 
-      const TriggerButton = (
-        <div
-          role="button"
-          className="flex max-w-full items-center gap-2 rounded-lg bg-muted/50 px-3 py-2 text-sm hover:bg-muted cursor-pointer"
-        >
-          <FileText className="h-5 w-5 shrink-0 text-muted-foreground" />
-          <span className="truncate">{fileName}</span>
-        </div>
-      );
-
       if (isPdf) {
         return (
           <Dialog>
-            <DialogTrigger asChild>
-              {TriggerButton}
+            <DialogTrigger className="flex max-w-full items-center gap-2 rounded-lg bg-muted/50 px-3 py-2 text-sm hover:bg-muted text-left">
+              <FileText className="h-5 w-5 shrink-0 text-muted-foreground" />
+              <span className="truncate">{fileName}</span>
             </DialogTrigger>
             <DialogContent className="max-w-[100vw] max-h-[100vh] sm:max-w-none w-screen h-screen p-0 flex flex-col overflow-hidden border-none bg-black/95 rounded-none sm:rounded-none">
               <div className="flex items-center justify-between px-4 py-3 bg-black/50 text-white">
