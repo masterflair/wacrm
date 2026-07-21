@@ -905,7 +905,21 @@ export function MessageThread({
               {displayName.charAt(0).toUpperCase()}
             </div>
             <div className="min-w-0">
-              <h2 className="truncate text-sm font-semibold text-foreground">{displayName}</h2>
+              <div className="flex items-center gap-1.5 group">
+                <h2 className="truncate text-sm font-semibold text-foreground">{displayName}</h2>
+                <div
+                  role="button"
+                  title="Copy name"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    navigator.clipboard.writeText(displayName);
+                    toast.success("Name copied!");
+                  }}
+                  className="text-foreground/40 hover:text-foreground transition-all active:scale-95 opacity-0 group-hover:opacity-100 cursor-pointer"
+                >
+                  <Copy className="h-3 w-3" />
+                </div>
+              </div>
               <div className="flex items-center gap-1.5 group">
                 <p className="truncate text-xs text-muted-foreground">{contact.phone}</p>
                 <div
@@ -929,7 +943,21 @@ export function MessageThread({
               {displayName.charAt(0).toUpperCase()}
             </div>
             <div className="min-w-0">
-              <h2 className="truncate text-sm font-semibold text-foreground">{displayName}</h2>
+              <div className="flex items-center gap-1.5 group">
+                <h2 className="truncate text-sm font-semibold text-foreground">{displayName}</h2>
+                <div
+                  role="button"
+                  title="Copy name"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    navigator.clipboard.writeText(displayName);
+                    toast.success("Name copied!");
+                  }}
+                  className="text-foreground/40 hover:text-foreground transition-all active:scale-95 opacity-0 group-hover:opacity-100 cursor-pointer"
+                >
+                  <Copy className="h-3 w-3" />
+                </div>
+              </div>
               <div className="flex items-center gap-1.5 group">
                 <p className="truncate text-xs text-muted-foreground">{contact.phone}</p>
                 <div
