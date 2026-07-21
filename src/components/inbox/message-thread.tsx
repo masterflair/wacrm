@@ -46,7 +46,7 @@ import {
   CHAT_MEDIA_BUCKET,
   type SendMediaPayload,
 } from "./message-composer";
-import { deleteAccountMedia } from "@/lib/storage/upload-media";
+import { deleteAccountMedia, uploadAccountMedia } from "@/lib/storage/upload-media";
 import { TemplatePicker } from "./template-picker";
 import { AiThreadBanner } from "./ai-thread-banner";
 import { buildReplyPreview } from "./reply-quote";
@@ -1186,13 +1186,20 @@ export function MessageThread({
                       void postReaction(msg.id, next);
                     };
 
-                    const handleSendEditedMedia = (blob: Blob, caption?: string) => {
+                    const handleSendEditedMedia = async (blob: Blob, caption?: string) => {
                       const file = new File([blob], `edited_image_${Date.now()}.png`, { type: "image/png" });
-                      void handleSendMedia({
-                        file,
-                        type: "image",
-                        caption: caption || ""
-                      });
+                      try {
+                        const { publicUrl, path } = await uploadAccountMedia(CHAT_MEDIA_BUCKET, file);
+                        void handleSendMedia({
+                          kind: "image",
+                          mediaUrl: publicUrl,
+                          path,
+                          caption: caption || "",
+                          filename: file.name,
+                        });
+                      } catch (err: any) {
+                        toast.error(err.message || "Failed to upload edited image.");
+                      }
                     };
 
                     return (
