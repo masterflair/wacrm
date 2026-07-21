@@ -188,9 +188,7 @@ export function Sidebar({ open = false, onClose }: SidebarProps) {
             close button is hidden since the sidebar is always-visible. */}
         <div className="flex h-14 shrink-0 items-center justify-between gap-2 border-b border-border/50 px-4">
           <Link href="/dashboard" className="flex items-center gap-2">
-            <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-md">
-              <MessageSquare className="h-4 w-4" />
-            </div>
+            <img src="/icon.png" alt="Logo" className="h-8 w-8 rounded-xl shadow-md object-contain" />
             <span className="text-sm font-semibold text-foreground">
               {t("title")}
             </span>
