@@ -52,12 +52,6 @@ function DashboardShellInner({ children }: { children: React.ReactNode }) {
           <div className="flex-1">
             {children}
           </div>
-          
-          <footer className="mt-8 border-t border-border/50 pt-4 pb-2 text-center text-xs text-muted-foreground flex justify-center gap-4">
-            <a href="/privacy" target="_blank" rel="noopener noreferrer" className="hover:text-foreground transition-colors">Privacy Policy</a>
-            <span>•</span>
-            <a href="/terms" target="_blank" rel="noopener noreferrer" className="hover:text-foreground transition-colors">Terms of Service</a>
-          </footer>
         </main>
       </div>
     </div>
