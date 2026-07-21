@@ -972,7 +972,7 @@ export function MessageThread({
     <div className={cn("flex min-w-0 flex-1 flex-col relative overflow-hidden", DOODLE_BG_CLASSES)}>
       {/* Header — frosted glass surface sits on top of the doodle so the
           name/avatar/dropdowns stay legible while looking premium. */}
-      <div className="flex items-center justify-between gap-2 border-b border-border/50 bg-card/60 backdrop-blur-2xl px-3 py-3 sm:px-4 shadow-[0_4px_24px_rgba(0,0,0,0.04)] z-10">
+      <div className="flex shrink-0 items-center justify-between gap-2 border-b border-border/50 bg-card/60 backdrop-blur-2xl px-3 py-3 sm:px-4 shadow-[0_4px_24px_rgba(0,0,0,0.04)] z-10">
         <div className="flex min-w-0 items-center gap-2 sm:gap-3">
           {/* Back-to-list button — mobile only. Hidden on lg+ where the
               conversation list is always visible next to the thread. */}
