@@ -56,14 +56,20 @@ export function PresenceHeartbeat() {
       const t = Date.now();
       if (t - lastBeatAt < 1_000) return;
       lastBeatAt = t;
-      const { error } = await supabase.rpc("touch_presence", {
-        p_status: currentStatus(),
-      });
-      if (error && !cancelled) {
-        // Non-fatal: presence is best-effort.
-        // Ignore expected network disconnects to avoid Next.js dev overlay spam.
-        if (error.message.includes("Failed to fetch")) return;
-        console.warn("[PresenceHeartbeat] touch_presence failed:", error.message);
+      try {
+        const { error } = await supabase.rpc("touch_presence", {
+          p_status: currentStatus(),
+        });
+        if (error && !cancelled) {
+          // Non-fatal: presence is best-effort.
+          // Ignore expected network disconnects to avoid Next.js dev overlay spam.
+          if (error.message.includes("Failed to fetch")) return;
+          console.warn("[PresenceHeartbeat] touch_presence failed:", error.message);
+        }
+      } catch (err: any) {
+        // Catch raw exceptions from fetch failures (e.g. extension blocking or offline)
+        if (err?.message?.includes("Failed to fetch") || err instanceof TypeError) return;
+        console.warn("[PresenceHeartbeat] touch_presence exception:", err);
       }
     };
 
