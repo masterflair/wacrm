@@ -663,7 +663,7 @@ function InboxPageInner() {
               className="absolute inset-0 bg-black/40"
               onClick={handleCloseMobileContactPanel}
             />
-            <div className="absolute inset-y-0 right-0 flex w-[85%] max-w-[350px]">
+            <div className="absolute inset-y-0 right-0 flex w-[75%] max-w-[320px]">
               <div
                 className="relative flex h-full w-full flex-col bg-card shadow-2xl"
                 onClick={(event) => event.stopPropagation()}
