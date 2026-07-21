@@ -109,7 +109,7 @@ export default async function RootLayout({
           dangerouslySetInnerHTML={{ __html: THEME_BOOT_SCRIPT }}
         />
       </head>
-      <body className="h-[100dvh] overflow-hidden overscroll-none bg-background text-foreground font-sans">
+      <body className="fixed inset-0 overflow-hidden overscroll-none bg-background text-foreground font-sans">
         <NextIntlClientProvider messages={messages} locale={locale}>
           <ThemeProvider>
             {children}
