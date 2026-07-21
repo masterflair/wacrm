@@ -842,17 +842,21 @@ export function MessageComposer({
             size="sm"
             canAct={!readOnly}
             gateReason="send messages"
-            disabled={!text.trim() || sessionExpired || sending}
-            onClick={handleSend}
+            disabled={sessionExpired || sending}
+            onClick={text.trim() ? handleSend : () => void startRecording()}
             onPointerDown={(e) => e.preventDefault()}
             className={cn(
               "order-last h-9 w-9 shrink-0 rounded-full bg-primary p-0 transition-all duration-300",
-              text.trim() && !sessionExpired && !sending 
+              !sessionExpired && !sending 
                 ? "shadow-[0_0_15px_rgba(34,197,94,0.4)] hover:shadow-[0_0_25px_rgba(34,197,94,0.6)] hover:bg-primary" 
                 : "opacity-40"
             )}
           >
-            <Send className="h-4 w-4 text-primary-foreground" />
+            {text.trim() ? (
+              <Send className="h-4 w-4 text-primary-foreground" />
+            ) : (
+              <Mic className="h-4 w-4 text-primary-foreground" />
+            )}
           </GatedButton>
         </div>
       )}
