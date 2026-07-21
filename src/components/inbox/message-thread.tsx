@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback, useRef, useMemo } from "react";
+import { useState, useEffect, useCallback, useRef, useMemo, memo } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
 import { usePresence } from "@/hooks/use-presence";
@@ -153,6 +153,96 @@ const STATUS_OPTIONS: { label: string; value: ConversationStatus; color: string 
  */
 const DOODLE_BG_CLASSES =
   "bg-background/40 bg-[url('/inbox-doodle.svg')] bg-repeat shadow-[inset_0_0_100px_rgba(0,0,0,0.2)]";
+
+const MemoizedMessageRow = memo(
+  ({
+    msg,
+    reply,
+    msgReactions,
+    user,
+    postReaction,
+    handleSendMedia,
+    handleStartReply,
+  }: any) => {
+    const handlePillToggle = (emoji: string) => {
+      const own = msgReactions?.find(
+        (r: any) => r.actor_type === "agent" && r.actor_id === user?.id
+      );
+      const next = own?.emoji === emoji ? "" : emoji;
+      void postReaction(msg.id, next);
+    };
+
+    const handleSendEditedMedia = async (blob: Blob, caption?: string) => {
+      const file = new File([blob], `edited_image_${Date.now()}.png`, {
+        type: "image/png",
+      });
+      try {
+        const { publicUrl, path } = await uploadAccountMedia(
+          CHAT_MEDIA_BUCKET,
+          file
+        );
+        void handleSendMedia({
+          kind: "image",
+          mediaUrl: publicUrl,
+          path,
+          caption: caption || "",
+          filename: file.name,
+        });
+      } catch (err: any) {
+        toast.error(err.message || "Failed to upload edited image.");
+      }
+    };
+
+    return (
+      <MessageActions
+        id={`message-${msg.id}`}
+        message={msg}
+        onReply={() => handleStartReply(msg)}
+        onReact={(emoji: string) => {
+          if (emoji) void postReaction(msg.id, emoji);
+        }}
+      >
+        <MessageBubble
+          message={msg}
+          reply={reply}
+          reactions={msgReactions}
+          currentUserId={user?.id}
+          onToggleReaction={handlePillToggle}
+          onSendEditedMedia={handleSendEditedMedia}
+          onQuoteClick={() => {
+            if (reply?.id) {
+              const el = document.getElementById(`message-${reply.id}`);
+              if (el) {
+                el.scrollIntoView({ behavior: "smooth", block: "center" });
+                el.classList.add(
+                  "bg-primary/10",
+                  "transition-colors",
+                  "duration-500",
+                  "rounded-xl"
+                );
+                setTimeout(() => {
+                  el.classList.remove(
+                    "bg-primary/10",
+                    "transition-colors",
+                    "duration-500",
+                    "rounded-xl"
+                  );
+                }, 2000);
+              }
+            }
+          }}
+        />
+      </MessageActions>
+    );
+  },
+  (prev: any, next: any) => {
+    return (
+      prev.msg === next.msg &&
+      prev.msgReactions === next.msgReactions &&
+      prev.user?.id === next.user?.id
+    );
+  }
+);
 
 export function MessageThread({
   conversation,
@@ -1174,66 +1264,17 @@ export function MessageThread({
                         }
                       : null;
                     const msgReactions = reactionsByMessageId.get(msg.id);
-                    // Toggle is computed at the call site — `msgReactions`
-                    // and `user?.id` are already in scope, no extra hook.
-                    const handlePillToggle = (emoji: string) => {
-                      const own = msgReactions?.find(
-                        (r) =>
-                          r.actor_type === "agent" &&
-                          r.actor_id === user?.id,
-                      );
-                      const next = own?.emoji === emoji ? "" : emoji;
-                      void postReaction(msg.id, next);
-                    };
-
-                    const handleSendEditedMedia = async (blob: Blob, caption?: string) => {
-                      const file = new File([blob], `edited_image_${Date.now()}.png`, { type: "image/png" });
-                      try {
-                        const { publicUrl, path } = await uploadAccountMedia(CHAT_MEDIA_BUCKET, file);
-                        void handleSendMedia({
-                          kind: "image",
-                          mediaUrl: publicUrl,
-                          path,
-                          caption: caption || "",
-                          filename: file.name,
-                        });
-                      } catch (err: any) {
-                        toast.error(err.message || "Failed to upload edited image.");
-                      }
-                    };
-
                     return (
-                      <MessageActions
+                      <MemoizedMessageRow
                         key={msg.id}
-                        id={`message-${msg.id}`}
-                        message={msg}
-                        onReply={() => handleStartReply(msg)}
-                        onReact={(emoji) => {
-                          if (emoji) void postReaction(msg.id, emoji);
-                        }}
-                      >
-                        <MessageBubble
-                          message={msg}
-                          reply={reply}
-                          reactions={msgReactions}
-                          currentUserId={user?.id}
-                          onToggleReaction={handlePillToggle}
-                          onSendEditedMedia={handleSendEditedMedia}
-                          onQuoteClick={() => {
-                            if (reply?.id) {
-                              const el = document.getElementById(`message-${reply.id}`);
-                              if (el) {
-                                el.scrollIntoView({ behavior: "smooth", block: "center" });
-                                // Optional highlight effect could be added here
-                                el.classList.add("bg-primary/10", "transition-colors", "duration-500", "rounded-xl");
-                                setTimeout(() => {
-                                  el.classList.remove("bg-primary/10");
-                                }, 1500);
-                              }
-                            }
-                          }}
-                        />
-                      </MessageActions>
+                        msg={msg}
+                        reply={reply}
+                        msgReactions={msgReactions}
+                        user={user}
+                        postReaction={postReaction}
+                        handleSendMedia={handleSendMedia}
+                        handleStartReply={handleStartReply}
+                      />
                     );
                   })}
                 </div>
