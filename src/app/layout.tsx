@@ -30,19 +30,6 @@ export const metadata: Metadata = {
     index: false,
     follow: false,
   },
-  icons: {
-    icon: [
-      { url: "/icon?size=32", sizes: "32x32", type: "image/png" },
-      { url: "/icon?size=192", sizes: "192x192", type: "image/png" },
-      { url: "/icon?size=512", sizes: "512x512", type: "image/png" },
-    ],
-    shortcut: [
-      { url: "/icon?size=192", sizes: "192x192", type: "image/png" },
-    ],
-    apple: [
-      { url: "/icon?size=180", sizes: "180x180", type: "image/png" },
-    ],
-  },
   manifest: "/manifest.webmanifest",
   formatDetection: {
     email: false,
