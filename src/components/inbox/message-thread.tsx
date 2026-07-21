@@ -27,6 +27,7 @@ import {
   RefreshCw,
   PanelRightOpen,
   PanelRightClose,
+  Copy,
 } from "lucide-react";
 import { format, isToday, isYesterday, differenceInHours } from "date-fns";
 import { useTranslations } from "next-intl";
@@ -905,7 +906,21 @@ export function MessageThread({
             </div>
             <div className="min-w-0">
               <h2 className="truncate text-sm font-semibold text-foreground">{displayName}</h2>
-              <p className="truncate text-xs text-muted-foreground">{contact.phone}</p>
+              <div className="flex items-center gap-1.5 group">
+                <p className="truncate text-xs text-muted-foreground">{contact.phone}</p>
+                <div
+                  role="button"
+                  title="Copy phone number"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    navigator.clipboard.writeText(contact.phone || "");
+                    toast.success("Phone number copied!");
+                  }}
+                  className="text-muted-foreground/60 hover:text-foreground transition-all active:scale-95 opacity-0 group-hover:opacity-100 cursor-pointer"
+                >
+                  <Copy className="h-3 w-3" />
+                </div>
+              </div>
             </div>
           </button>
           
@@ -915,7 +930,21 @@ export function MessageThread({
             </div>
             <div className="min-w-0">
               <h2 className="truncate text-sm font-semibold text-foreground">{displayName}</h2>
-              <p className="truncate text-xs text-muted-foreground">{contact.phone}</p>
+              <div className="flex items-center gap-1.5 group">
+                <p className="truncate text-xs text-muted-foreground">{contact.phone}</p>
+                <div
+                  role="button"
+                  title="Copy phone number"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    navigator.clipboard.writeText(contact.phone || "");
+                    toast.success("Phone number copied!");
+                  }}
+                  className="text-muted-foreground/60 hover:text-foreground transition-all active:scale-95 opacity-0 group-hover:opacity-100 cursor-pointer"
+                >
+                  <Copy className="h-3 w-3" />
+                </div>
+              </div>
             </div>
           </div>
           {/* Session timer badge — hidden on the narrowest phones so
