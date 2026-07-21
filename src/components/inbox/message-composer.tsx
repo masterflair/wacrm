@@ -799,7 +799,6 @@ export function MessageComposer({
                 {t("quickReplies")}
               </DropdownMenuItem>
               <DropdownMenuItem
-                className="sm:hidden"
                 onClick={onOpenTemplates}
               >
                 <LayoutTemplate className="mr-2 h-4 w-4" />
@@ -814,18 +813,6 @@ export function MessageComposer({
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
-
-          <GatedButton
-            variant="ghost"
-            size="sm"
-            canAct={!readOnly}
-            gateReason="send messages"
-            title={readOnly ? undefined : t("sendTemplate")}
-            className="hidden h-9 w-9 shrink-0 bg-primary p-0 hover:bg-primary/90 sm:inline-flex"
-            onClick={onOpenTemplates}
-          >
-            <LayoutTemplate className="h-4 w-4" />
-          </GatedButton>
 
           <GatedButton
             variant="ghost"
