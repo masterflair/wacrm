@@ -861,6 +861,7 @@ export function MessageComposer({
             gateReason="send messages"
             disabled={!text.trim() || sessionExpired || sending}
             onClick={handleSend}
+            onPointerDown={(e) => e.preventDefault()}
             className={cn(
               "order-last h-9 w-9 shrink-0 rounded-full bg-primary p-0 transition-all duration-300",
               text.trim() && !sessionExpired && !sending 
