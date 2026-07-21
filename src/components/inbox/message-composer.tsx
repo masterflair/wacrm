@@ -734,7 +734,8 @@ export function MessageComposer({
         </div>
       ) : (
         <div className="flex flex-wrap items-end gap-2">
-          {/* Attach menu — photo / video / document / voice. */}
+          {/* + menu — interactive messages + quick replies. Gated on the
+              24h window like free-form text (interactive requires it). */}
           <DropdownMenu>
             <DropdownMenuTrigger
               disabled={inputsDisabled || busy}
@@ -743,17 +744,17 @@ export function MessageComposer({
                   ? t("readOnlyTitle")
                   : inputsDisabled
                     ? undefined
-                    : t("attachMedia")
+                    : t("moreActions")
               }
-              className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-md p-0 text-muted-foreground hover:text-foreground disabled:cursor-not-allowed disabled:opacity-50"
+              className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full p-0 text-muted-foreground hover:bg-white/5 hover:text-foreground disabled:cursor-not-allowed disabled:opacity-50 transition-colors"
             >
               {busy ? (
                 <Loader2 className="h-4 w-4 animate-spin" />
               ) : (
-                <Paperclip className="h-4 w-4" />
+                <Plus className="h-5 w-5" />
               )}
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="start" className="border-border bg-popover">
+            <DropdownMenuContent align="start" className="w-48 border-border bg-popover">
               <DropdownMenuItem onClick={() => imageInputRef.current?.click()}>
                 <ImageIcon className="mr-2 h-4 w-4" />
                 {t("photo")}
@@ -770,26 +771,7 @@ export function MessageComposer({
                 <Mic className="mr-2 h-4 w-4" />
                 {t("voiceNote")}
               </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-
-          {/* + menu — interactive messages + quick replies. Gated on the
-              24h window like free-form text (interactive requires it). */}
-          <DropdownMenu>
-            <DropdownMenuTrigger
-              disabled={inputsDisabled}
-              title={
-                readOnly
-                  ? t("readOnlyTitle")
-                  : inputsDisabled
-                    ? undefined
-                    : t("moreActions")
-              }
-              className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-md p-0 text-muted-foreground hover:text-foreground disabled:cursor-not-allowed disabled:opacity-50"
-            >
-              <Plus className="h-4 w-4" />
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="start" className="border-border bg-popover">
+              <DropdownMenuSeparator />
               <DropdownMenuItem onClick={() => openInteractiveBuilder()}>
                 <MessageSquareDashed className="mr-2 h-4 w-4" />
                 {t("interactiveMessage")}
@@ -850,7 +832,7 @@ export function MessageComposer({
             // The placeholder text also surfaces the read-only state.
             title={readOnly ? t("readOnlyTitle") : undefined}
             className={cn(
-              "flex-1 min-w-0 w-full resize-none rounded-2xl border border-white/10 bg-white/5 px-4 py-2.5 text-base sm:text-sm text-white placeholder-white/50 outline-none transition-colors focus:border-white/30 focus:bg-white/10",
+              "flex-1 min-w-0 w-full resize-none rounded-2xl border border-white/10 bg-white/5 px-3.5 py-1.5 text-base sm:text-sm text-white placeholder-white/50 outline-none transition-colors focus:border-white/30 focus:bg-white/10",
               (sessionExpired || readOnly) && "cursor-not-allowed opacity-50"
             )}
           />
