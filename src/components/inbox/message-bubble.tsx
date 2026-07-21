@@ -36,15 +36,15 @@ interface MessageBubbleProps {
 function StatusIcon({ status }: { status: Message["status"] }) {
   switch (status) {
     case "sending":
-      return <Clock className="h-3 w-3 text-primary-foreground/50" />;
+      return <Clock className="h-3 w-3 text-inherit opacity-70" />;
     case "sent":
-      return <Check className="h-3 w-3 text-primary-foreground/70" />;
+      return <Check className="h-3 w-3 text-inherit opacity-80" />;
     case "delivered":
-      return <CheckCheck className="h-3 w-3 text-primary-foreground/70" />;
+      return <CheckCheck className="h-3 w-3 text-inherit opacity-80" />;
     case "read":
-      return <CheckCheck className="h-3 w-3 text-sky-300 drop-shadow-sm" />;
+      return <CheckCheck className="h-3 w-3 text-sky-400" />;
     case "failed":
-      return <XCircle className="h-3 w-3 text-red-300" />;
+      return <XCircle className="h-3 w-3 text-red-400" />;
     default:
       return null;
   }
@@ -320,8 +320,8 @@ export function MessageBubble({
         {/* Absolute positioned timestamp in bottom right */}
         <div
           className={cn(
-            "absolute bottom-1.5 right-2 flex items-center gap-1 text-[10px] leading-none",
-            isAgent ? "text-primary-foreground/70" : "text-muted-foreground/70"
+            "absolute bottom-1.5 right-1.5 flex items-center gap-1 text-[10px] leading-none rounded-full px-1.5 py-[3px]",
+            isAgent ? "bg-black/20 text-white backdrop-blur-md" : "text-muted-foreground/70"
           )}
         >
           {message.ai_generated && (
@@ -336,11 +336,7 @@ export function MessageBubble({
           <span
             className={cn(
               "text-[10px]",
-              // Outbound bubbles sit on the primary fill, so the
-              // timestamp must read against that (not the neutral
-              // foreground) — otherwise it goes low-contrast in light
-              // mode. Inbound bubbles use the muted surface.
-              isAgent ? "text-primary-foreground/70" : "text-muted-foreground",
+              isAgent ? "text-inherit opacity-90 font-medium" : "text-muted-foreground",
             )}
           >
             {time}

@@ -484,7 +484,7 @@ function ConversationItem({
       }}
       className={cn(
         "flex items-start gap-3 px-4 py-3 text-left transition-all duration-300 hover:bg-muted/40 cursor-pointer outline-none focus-visible:bg-muted/40 my-1 mx-2 w-[calc(100%-16px)] rounded-2xl",
-        isActive ? "bg-background/80 shadow-[0_4px_12px_rgba(0,0,0,0.05)] ring-1 ring-border/50" : "bg-transparent"
+        isActive ? "bg-muted/80 shadow-[0_4px_12px_rgba(0,0,0,0.05)] ring-1 ring-border/80" : "bg-transparent"
       )}
     >
       {/* Avatar */}
