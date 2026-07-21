@@ -58,6 +58,9 @@ function MediaUnavailable({ label, t }: { label: string, t: ReturnType<typeof us
   );
 }
 
+// Module-level cache to prevent re-fetching blobs when scrolling or re-mounting
+const imageBlobCache = new Map<string, string>();
+
 function MediaImage({ url, alt }: { url: string; alt: string }) {
   const [src, setSrc] = useState<string | null>(null);
   const [error, setError] = useState(false);
@@ -68,11 +71,17 @@ function MediaImage({ url, alt }: { url: string; alt: string }) {
 
     // Proxy URLs need auth fetch to create blob URL
     if (url.startsWith("/api/whatsapp/media/")) {
+      if (imageBlobCache.has(url)) {
+        setSrc(imageBlobCache.get(url)!);
+        setLoading(false);
+        return;
+      }
       try {
         const res = await fetch(url);
         if (!res.ok) throw new Error("Failed to load media");
         const blob = await res.blob();
         const blobUrl = URL.createObjectURL(blob);
+        imageBlobCache.set(url, blobUrl);
         setSrc(blobUrl);
       } catch {
         setError(true);
@@ -87,11 +96,8 @@ function MediaImage({ url, alt }: { url: string; alt: string }) {
 
   useEffect(() => {
     loadImage();
-    return () => {
-      if (src?.startsWith("blob:")) {
-        URL.revokeObjectURL(src);
-      }
-    };
+    // Intentionally omitting URL.revokeObjectURL on unmount
+    // because the blob is cached in imageBlobCache for reuse.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [loadImage]);
 
@@ -290,10 +296,10 @@ export function MessageBubble({
     >
       <div
         className={cn(
-          "relative rounded-2xl px-3 py-2",
+          "relative rounded-xl px-3.5 py-2.5 shadow-sm max-w-full",
           isAgent
-            ? "rounded-br-md bg-primary text-primary-foreground"
-            : "rounded-bl-md bg-muted text-foreground",
+            ? "rounded-br-sm bg-primary text-primary-foreground ring-1 ring-primary-foreground/10"
+            : "rounded-bl-sm bg-card text-card-foreground border"
         )}
       >
         {reply && (
@@ -304,17 +310,17 @@ export function MessageBubble({
             onClick={onQuoteClick}
           />
         )}
-        <MessageContent message={message} t={t} />
+        <div className="pb-3 min-w-[80px]">
+          <MessageContent message={message} t={t} />
+        </div>
+        
+        {/* Absolute positioned timestamp in bottom right */}
         <div
           className={cn(
-            "mt-1 flex items-center gap-1",
-            isAgent ? "justify-end" : "justify-start",
+            "absolute bottom-1.5 right-2 flex items-center gap-1 text-[10px] leading-none",
+            isAgent ? "text-primary-foreground/70" : "text-muted-foreground/70"
           )}
         >
-          {/* AI badge — only on replies the auto-reply bot generated
-              (always outbound, so it sits on the primary fill). Lets
-              agents tell an AI reply from their own / a Flow's at a
-              glance. */}
           {message.ai_generated && (
             <span
               className="inline-flex items-center gap-0.5 rounded-full bg-primary-foreground/20 px-1.5 py-px text-[9px] font-semibold uppercase leading-none tracking-wide text-primary-foreground"
