@@ -604,7 +604,7 @@ export function MessageComposer({
   // ---- Render --------------------------------------------------------
 
   return (
-    <div className="absolute bottom-6 left-4 right-4 z-20 sm:left-1/2 sm:right-auto sm:w-[calc(100%-2rem)] sm:max-w-4xl sm:-translate-x-1/2 bg-black/60 backdrop-blur-2xl rounded-[32px] border border-white/10 shadow-[0_12px_40px_rgba(0,0,0,0.4)] p-3">
+    <div className="absolute bottom-6 left-4 right-4 z-20 sm:left-1/2 sm:right-auto sm:w-[calc(100%-2rem)] sm:max-w-4xl sm:-translate-x-1/2 bg-black/60 backdrop-blur-2xl rounded-[32px] border border-white/10 shadow-[0_12px_40px_rgba(0,0,0,0.4)] px-2 py-1.5">
       {slashMenuOpen && filteredSlashReplies.length > 0 && (
         <div className="absolute bottom-full left-4 mb-2 w-80 rounded-xl border border-border bg-popover text-popover-foreground shadow-lg outline-none animate-in fade-in-80 zoom-in-95 z-50 overflow-hidden">
           <div className="px-3 py-2 text-xs font-semibold text-muted-foreground border-b border-border bg-muted/30">
