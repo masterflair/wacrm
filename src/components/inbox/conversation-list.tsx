@@ -223,9 +223,9 @@ export function ConversationList({
     // w-full on mobile so the list occupies the whole viewport when it's
     // the single pane showing; fixed 320px on desktop where it shares the
     // row with the thread + contact sidebar.
-    <div className="flex h-full w-full flex-col border-r border-border bg-card lg:w-80">
+    <div className="flex h-full w-full flex-col border-r border-border/50 bg-card/40 backdrop-blur-2xl shadow-[4px_0_24px_rgba(0,0,0,0.02)] lg:w-80">
       {/* Search + Filter */}
-      <div className="space-y-2 border-b border-border p-3">
+      <div className="space-y-2 border-b border-border/50 p-3">
         <div className="relative">
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <Input
@@ -450,12 +450,41 @@ function ConversationItem({
       })
     : "";
 
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const el = scrollContainerRef.current;
+    if (!el) return;
+
+    const onWheel = (e: WheelEvent) => {
+      // If there's horizontal scrolling, let it be. Only intercept pure vertical.
+      if (Math.abs(e.deltaY) > Math.abs(e.deltaX)) {
+        // Only intercept if we actually have overflow to scroll
+        if (el.scrollWidth > el.clientWidth) {
+          e.preventDefault();
+          el.scrollLeft += e.deltaY;
+        }
+      }
+    };
+
+    el.addEventListener("wheel", onWheel, { passive: false });
+    return () => el.removeEventListener("wheel", onWheel);
+  }, []);
+
   return (
-    <button
+    <div
+      role="button"
+      tabIndex={0}
       onClick={handleClick}
+      onKeyDown={(e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          handleClick();
+        }
+      }}
       className={cn(
-        "flex w-full items-start gap-3 px-3 py-3 text-left transition-colors hover:bg-muted/50",
-        isActive && "border-l-2 border-primary bg-muted/70"
+        "flex items-start gap-3 px-4 py-3 text-left transition-all duration-300 hover:bg-muted/40 cursor-pointer outline-none focus-visible:bg-muted/40 my-1 mx-2 w-[calc(100%-16px)] rounded-2xl",
+        isActive ? "bg-background/80 shadow-[0_4px_12px_rgba(0,0,0,0.05)] ring-1 ring-border/50" : "bg-transparent"
       )}
     >
       {/* Avatar */}
@@ -489,16 +518,30 @@ function ConversationItem({
                 {conversation.unread_count}
               </span>
             )}
-            <span
-              className={cn(
-                "h-2 w-2 rounded-full",
-                STATUS_COLORS[conversation.status]
-              )}
-              title={conversation.status}
-            />
           </div>
         </div>
+        {contact?.tags && contact.tags.length > 0 && (
+          <div 
+            ref={scrollContainerRef}
+            className="mt-2 flex gap-1.5 overflow-x-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
+            onPointerDown={(e) => e.stopPropagation()}
+          >
+            {contact.tags.map((tag) => (
+              <div
+                key={tag.id}
+                className="inline-flex shrink-0 items-center gap-1 rounded-full border border-border/50 bg-muted/20 px-1.5 py-0.5 text-[9px] font-medium text-muted-foreground"
+                title={tag.name}
+              >
+                <span
+                  className="h-1.5 w-1.5 shrink-0 rounded-full"
+                  style={{ backgroundColor: tag.color ?? "var(--muted-foreground)" }}
+                />
+                <span className="whitespace-nowrap">{tag.name}</span>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
-    </button>
+    </div>
   );
 }

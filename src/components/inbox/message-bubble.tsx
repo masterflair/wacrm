@@ -30,6 +30,7 @@ interface MessageBubbleProps {
   currentUserId?: string;
   onToggleReaction?: (emoji: string) => void;
   onQuoteClick?: () => void;
+  onSendEditedMedia?: (blob: Blob, caption?: string) => void;
 }
 
 function StatusIcon({ status }: { status: Message["status"] }) {
@@ -61,7 +62,7 @@ function MediaUnavailable({ label, t }: { label: string, t: ReturnType<typeof us
 // Module-level cache to prevent re-fetching blobs when scrolling or re-mounting
 const imageBlobCache = new Map<string, string>();
 
-function MediaImage({ url, alt }: { url: string; alt: string }) {
+function MediaImage({ url, alt, onSendEditedMedia }: { url: string; alt: string; onSendEditedMedia?: (blob: Blob, caption?: string) => void }) {
   const [src, setSrc] = useState<string | null>(null);
   const [error, setError] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -121,6 +122,7 @@ function MediaImage({ url, alt }: { url: string; alt: string }) {
     <InteractiveImageViewer
       src={src ?? ""}
       alt={alt}
+      onSendEditedMedia={onSendEditedMedia}
       triggerChildren={
         <img
           src={src ?? ""}
@@ -133,7 +135,7 @@ function MediaImage({ url, alt }: { url: string; alt: string }) {
   );
 }
 
-function MessageContent({ message, t }: { message: Message, t: ReturnType<typeof useTranslations> }) {
+function MessageContent({ message, t, onSendEditedMedia }: { message: Message, t: ReturnType<typeof useTranslations>, onSendEditedMedia?: (blob: Blob, caption?: string) => void }) {
   switch (message.content_type) {
     case "text":
       return (
@@ -146,7 +148,7 @@ function MessageContent({ message, t }: { message: Message, t: ReturnType<typeof
       return (
         <div>
           {message.media_url ? (
-            <MediaImage url={message.media_url} alt="Shared image" />
+            <MediaImage url={message.media_url} alt="Shared image" onSendEditedMedia={onSendEditedMedia} />
           ) : (
             <MediaUnavailable label={t("photo")} t={t} />
           )}
@@ -275,10 +277,11 @@ function MessageContent({ message, t }: { message: Message, t: ReturnType<typeof
 export function MessageBubble({
   message,
   reply,
-  reactions = [],
+  reactions,
   currentUserId,
   onToggleReaction,
   onQuoteClick,
+  onSendEditedMedia,
 }: MessageBubbleProps) {
   const t = useTranslations("Inbox.bubble");
 
@@ -296,10 +299,10 @@ export function MessageBubble({
     >
       <div
         className={cn(
-          "relative rounded-xl px-3.5 py-2.5 shadow-sm max-w-full",
+          "relative rounded-[22px] px-4 py-3 shadow-[0_4px_16px_rgba(0,0,0,0.06)] max-w-full backdrop-blur-sm",
           isAgent
-            ? "rounded-br-sm bg-primary text-primary-foreground ring-1 ring-primary-foreground/10"
-            : "rounded-bl-sm bg-card text-card-foreground border"
+            ? "rounded-br-sm bg-primary text-primary-foreground border border-white/10"
+            : "rounded-bl-sm bg-card/90 text-card-foreground border border-border/50"
         )}
       >
         {reply && (
@@ -311,7 +314,7 @@ export function MessageBubble({
           />
         )}
         <div className="pb-3 min-w-[80px]">
-          <MessageContent message={message} t={t} />
+          <MessageContent message={message} t={t} onSendEditedMedia={onSendEditedMedia} />
         </div>
         
         {/* Absolute positioned timestamp in bottom right */}

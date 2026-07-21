@@ -155,6 +155,33 @@ export function MessageComposer({
   const [savingQuickReply, setSavingQuickReply] = useState(false);
   const [quickReplyOpen, setQuickReplyOpen] = useState(false);
 
+  // Slash command menu state
+  const [slashMenuOpen, setSlashMenuOpen] = useState(false);
+  const [slashQuery, setSlashQuery] = useState("");
+  const [slashReplies, setSlashReplies] = useState<QuickReply[]>([]);
+  const [slashSelectedIndex, setSlashSelectedIndex] = useState(0);
+
+  useEffect(() => {
+    let cancelled = false;
+    void (async () => {
+      try {
+        const res = await fetch("/api/quick-replies", { cache: "no-store" });
+        const data = await res.json().catch(() => ({}));
+        if (!cancelled && res.ok) {
+          setSlashReplies((data.quick_replies as QuickReply[]) ?? []);
+        }
+      } catch {}
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const filteredSlashReplies = slashReplies.filter((qr) =>
+    qr.title.toLowerCase().includes(slashQuery.toLowerCase()) ||
+    (qr.content_text && qr.content_text.toLowerCase().includes(slashQuery.toLowerCase()))
+  );
+
   // Media attachment state. `draft` holds an uploaded-but-not-yet-sent
   // attachment; `busy` covers the upload/transcode window.
   const [draft, setDraft] = useState<MediaDraft | null>(null);
@@ -235,24 +262,7 @@ export function MessageComposer({
       setSending(false);
     }
   }, [text, sending, sessionExpired, onSend, replyTo?.id]);
-
-  const handleKeyDown = useCallback(
-    (e: KeyboardEvent<HTMLTextAreaElement>) => {
-      if (e.key === "Enter" && !e.shiftKey) {
-        e.preventDefault();
-        handleSend();
-      }
-    },
-    [handleSend]
-  );
-
-  const handleChange = useCallback(
-    (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-      setText(e.target.value);
-      adjustHeight();
-    },
-    [adjustHeight]
-  );
+  // handleKeyDown and handleChange moved down
 
   // Ask the AI assistant for a suggested reply and drop it into the
   // composer for the agent to edit + send. Read-only server-side —
@@ -357,18 +367,25 @@ export function MessageComposer({
   // A picked quick reply: text fills the composer; interactive opens the
   // builder pre-filled so the agent can tweak before sending.
   const handlePickQuickReply = useCallback(
-    (qr: QuickReply) => {
+    (qr: QuickReply, fromSlash = false) => {
       setQuickReplyOpen(false);
+      if (fromSlash) setSlashMenuOpen(false);
+      
       if (qr.kind === "interactive" && qr.interactive_payload) {
+        if (fromSlash) setText("");
         openInteractiveBuilder(qr.interactive_payload);
         return;
       }
       const body = qr.content_text ?? "";
-      // Separate the snippet from any existing draft with a newline so the
-      // words don't run together ("Thanks" + "we'll…" → "Thankswe'll…").
-      setText((prev) =>
-        prev && !/\s$/.test(prev) ? `${prev}\n${body}` : `${prev}${body}`,
-      );
+      if (fromSlash) {
+        setText(body);
+      } else {
+        // Separate the snippet from any existing draft with a newline so the
+        // words don't run together ("Thanks" + "we'll…" → "Thankswe'll…").
+        setText((prev) =>
+          prev && !/\s$/.test(prev) ? `${prev}\n${body}` : `${prev}${body}`,
+        );
+      }
       requestAnimationFrame(() => {
         adjustHeight();
         const el = textareaRef.current;
@@ -379,6 +396,56 @@ export function MessageComposer({
       });
     },
     [openInteractiveBuilder, adjustHeight],
+  );
+
+  const handleChange = useCallback(
+    (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+      const val = e.target.value;
+      setText(val);
+      adjustHeight();
+
+      if (val.startsWith("/")) {
+        setSlashMenuOpen(true);
+        setSlashQuery(val.slice(1));
+        setSlashSelectedIndex(0);
+      } else {
+        setSlashMenuOpen(false);
+      }
+    },
+    [adjustHeight]
+  );
+
+  const handleKeyDown = useCallback(
+    (e: KeyboardEvent<HTMLTextAreaElement>) => {
+      if (slashMenuOpen && filteredSlashReplies.length > 0) {
+        if (e.key === "ArrowDown") {
+          e.preventDefault();
+          setSlashSelectedIndex((i) => (i + 1) % filteredSlashReplies.length);
+          return;
+        }
+        if (e.key === "ArrowUp") {
+          e.preventDefault();
+          setSlashSelectedIndex((i) => (i - 1 + filteredSlashReplies.length) % filteredSlashReplies.length);
+          return;
+        }
+        if (e.key === "Enter") {
+          e.preventDefault();
+          handlePickQuickReply(filteredSlashReplies[slashSelectedIndex], true);
+          return;
+        }
+        if (e.key === "Escape") {
+          e.preventDefault();
+          setSlashMenuOpen(false);
+          return;
+        }
+      }
+
+      if (e.key === "Enter" && !e.shiftKey) {
+        e.preventDefault();
+        handleSend();
+      }
+    },
+    [handleSend, slashMenuOpen, filteredSlashReplies, slashSelectedIndex, handlePickQuickReply]
   );
 
   // Upload a captured file to chat-media and stage it as a draft.
@@ -536,7 +603,44 @@ export function MessageComposer({
   // ---- Render --------------------------------------------------------
 
   return (
-    <div className="border-t border-border bg-card p-3 pb-5">
+    <div className="absolute bottom-6 left-4 right-4 z-20 sm:left-1/2 sm:right-auto sm:w-[calc(100%-2rem)] sm:max-w-4xl sm:-translate-x-1/2 bg-black/60 backdrop-blur-2xl rounded-[32px] border border-white/10 shadow-[0_12px_40px_rgba(0,0,0,0.4)] p-3">
+      {slashMenuOpen && filteredSlashReplies.length > 0 && (
+        <div className="absolute bottom-full left-4 mb-2 w-80 rounded-xl border border-border bg-popover text-popover-foreground shadow-lg outline-none animate-in fade-in-80 zoom-in-95 z-50 overflow-hidden">
+          <div className="px-3 py-2 text-xs font-semibold text-muted-foreground border-b border-border bg-muted/30">
+            Quick Replies
+          </div>
+          <ul className="max-h-[250px] overflow-y-auto p-1 flex flex-col gap-0.5">
+            {filteredSlashReplies.map((qr, i) => (
+              <li key={qr.id}>
+                <button
+                  type="button"
+                  onClick={() => handlePickQuickReply(qr, true)}
+                  className={cn(
+                    "flex w-full items-start gap-2 rounded-lg p-2 text-left hover:bg-accent hover:text-accent-foreground transition-colors",
+                    i === slashSelectedIndex && "bg-accent text-accent-foreground"
+                  )}
+                >
+                  {qr.kind === "interactive" ? (
+                    <Zap className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
+                  ) : (
+                    <MessageSquareDashed className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" />
+                  )}
+                  <span className="min-w-0 flex-1">
+                    <span className="block truncate text-sm font-medium">
+                      {qr.title}
+                    </span>
+                    <span className="block truncate text-xs opacity-70">
+                      {qr.kind === "interactive" && qr.interactive_payload
+                        ? "Interactive template"
+                        : qr.content_text}
+                    </span>
+                  </span>
+                </button>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
       {replyTo && (
         <div className="mb-2">
           <ReplyQuote
@@ -607,7 +711,7 @@ export function MessageComposer({
         />
       ) : recording ? (
         // Recording bar — replaces the composer while the mic is live.
-        <div className="flex items-center gap-3 rounded-xl border border-border bg-muted px-4 py-2.5">
+        <div className="flex items-center gap-3 rounded-2xl border border-white/10 bg-white/5 px-4 py-2.5">
           <span className="flex h-2.5 w-2.5 shrink-0 animate-pulse rounded-full bg-red-500" />
           <span className="flex-1 text-sm text-foreground">
             {t("recording", { current: formatDuration(recordSeconds), max: formatDuration(MAX_RECORDING_SECONDS) })}
@@ -759,7 +863,7 @@ export function MessageComposer({
             // The placeholder text also surfaces the read-only state.
             title={readOnly ? t("readOnlyTitle") : undefined}
             className={cn(
-              "flex-1 min-w-0 w-full resize-none rounded-xl border border-border bg-muted px-4 py-2.5 text-base sm:text-sm text-foreground placeholder-muted-foreground outline-none transition-colors focus:border-primary/50",
+              "flex-1 min-w-0 w-full resize-none rounded-2xl border border-white/10 bg-white/5 px-4 py-2.5 text-base sm:text-sm text-white placeholder-white/50 outline-none transition-colors focus:border-white/30 focus:bg-white/10",
               (sessionExpired || readOnly) && "cursor-not-allowed opacity-50"
             )}
           />
@@ -770,9 +874,14 @@ export function MessageComposer({
             gateReason="send messages"
             disabled={!text.trim() || sessionExpired || sending}
             onClick={handleSend}
-            className="order-last h-9 w-9 shrink-0 bg-primary p-0 hover:bg-primary/90 disabled:opacity-40"
+            className={cn(
+              "order-last h-9 w-9 shrink-0 rounded-full bg-primary p-0 transition-all duration-300",
+              text.trim() && !sessionExpired && !sending 
+                ? "shadow-[0_0_15px_rgba(34,197,94,0.4)] hover:shadow-[0_0_25px_rgba(34,197,94,0.6)] hover:bg-primary" 
+                : "opacity-40"
+            )}
           >
-            <Send className="h-4 w-4" />
+            <Send className="h-4 w-4 text-primary-foreground" />
           </GatedButton>
         </div>
       )}

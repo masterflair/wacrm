@@ -48,11 +48,30 @@ export function MessageActions({
     message.sender_type === "agent" || message.sender_type === "bot";
 
   const handleContextMenu = (e: React.MouseEvent) => {
-    e.preventDefault();
-    setTouchOpen(true);
+    // Only intercept right-click on touch devices. On desktop, let the native context menu appear.
+    if ('ontouchstart' in window || navigator.maxTouchPoints > 0) {
+      e.preventDefault();
+      setTouchOpen(true);
+    }
   };
 
   const handleCopy = async () => {
+    if (message.content_type === "image" && message.media_url) {
+      try {
+        const res = await fetch(message.media_url);
+        const blob = await res.blob();
+        await navigator.clipboard.write([
+          new ClipboardItem({ [blob.type]: blob })
+        ]);
+        toast.success(t("copied"));
+      } catch (err) {
+        console.error("Clipboard copy failed:", err);
+        toast.error(t("copyFailed"));
+      }
+      setTouchOpen(false);
+      return;
+    }
+
     const text = message.content_text ?? "";
     if (!text) {
       toast.error(t("nothingToCopy"));

@@ -151,7 +151,7 @@ const STATUS_OPTIONS: { label: string; value: ConversationStatus; color: string 
  * if we ever switch the asset, both spots update together.
  */
 const DOODLE_BG_CLASSES =
-  "bg-background bg-[url('/inbox-doodle.svg')] bg-repeat";
+  "bg-background/40 bg-[url('/inbox-doodle.svg')] bg-repeat shadow-[inset_0_0_100px_rgba(0,0,0,0.2)]";
 
 export function MessageThread({
   conversation,
@@ -878,10 +878,10 @@ export function MessageThread({
     // clipped and the hover toolbar overlaps the Tags panel. Letting the
     // root shrink lets the bubbles' break-words / max-w caps apply.
     // Issue #257.
-    <div className={cn("flex min-w-0 flex-1 flex-col", DOODLE_BG_CLASSES)}>
-      {/* Header — solid card surface sits on top of the doodle so the
-          name/avatar/dropdowns stay legible. */}
-      <div className="flex items-center justify-between gap-2 border-b border-border bg-card px-3 py-3 sm:px-4">
+    <div className={cn("flex min-w-0 flex-1 flex-col relative overflow-hidden", DOODLE_BG_CLASSES)}>
+      {/* Header — frosted glass surface sits on top of the doodle so the
+          name/avatar/dropdowns stay legible while looking premium. */}
+      <div className="flex items-center justify-between gap-2 border-b border-border/50 bg-card/60 backdrop-blur-2xl px-3 py-3 sm:px-4 shadow-[0_4px_24px_rgba(0,0,0,0.04)] z-10">
         <div className="flex min-w-0 items-center gap-2 sm:gap-3">
           {/* Back-to-list button — mobile only. Hidden on lg+ where the
               conversation list is always visible next to the thread. */}
@@ -1075,7 +1075,7 @@ export function MessageThread({
       </div>
 
       {/* Messages Area */}
-      <div ref={scrollRef} className="flex-1 overflow-y-auto px-4 py-4">
+      <div ref={scrollRef} className="flex-1 overflow-y-auto px-4 pt-4 pb-48">
         {loading ? (
           <div className="flex items-center justify-center py-12">
             <div className="h-5 w-5 animate-spin rounded-full border-2 border-primary border-t-transparent" />
@@ -1128,6 +1128,16 @@ export function MessageThread({
                       const next = own?.emoji === emoji ? "" : emoji;
                       void postReaction(msg.id, next);
                     };
+
+                    const handleSendEditedMedia = (blob: Blob, caption?: string) => {
+                      const file = new File([blob], `edited_image_${Date.now()}.png`, { type: "image/png" });
+                      void handleSendMedia({
+                        file,
+                        type: "image",
+                        caption: caption || ""
+                      });
+                    };
+
                     return (
                       <MessageActions
                         key={msg.id}
@@ -1144,6 +1154,7 @@ export function MessageThread({
                           reactions={msgReactions}
                           currentUserId={user?.id}
                           onToggleReaction={handlePillToggle}
+                          onSendEditedMedia={handleSendEditedMedia}
                           onQuoteClick={() => {
                             if (reply?.id) {
                               const el = document.getElementById(`message-${reply.id}`);
