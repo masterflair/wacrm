@@ -26,22 +26,24 @@ export default function Icon(request: Request) {
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
-          background: "#7c3aed",
-          borderRadius: 6,
+          background: "linear-gradient(135deg, #000000 0%, #1e1b4b 100%)",
+          borderRadius: 8,
+          border: "2px solid rgba(255, 255, 255, 0.1)",
         }}
       >
-        <svg
-          width={Math.round(size * 0.625)}
-          height={Math.round(size * 0.625)}
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="#ffffff"
-          strokeWidth={Math.max(2, Math.round(size / 24))}
-          strokeLinecap="round"
-          strokeLinejoin="round"
+        <div
+          style={{
+            color: "#eab308", // Golden text color for RenderAura
+            fontSize: Math.round(size * 0.7),
+            fontFamily: "system-ui, sans-serif",
+            fontWeight: 800,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+          }}
         >
-          <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
-        </svg>
+          R
+        </div>
       </div>
     ),
     { width: size, height: size },
