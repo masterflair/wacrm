@@ -21,6 +21,7 @@ export async function POST(request: Request) {
 
     const body = await request.json().catch(() => ({}));
     const plan_id = body.plan_id || process.env.NEXT_PUBLIC_RAZORPAY_DEFAULT_PLAN_ID;
+    const { tax_id, address, state } = body;
 
     if (!plan_id) {
       return NextResponse.json(
@@ -47,16 +48,36 @@ export async function POST(request: Request) {
       throw new Error(`Account query failed: ${accountError?.message || "Account not found"}`);
     }
 
+    // Update billing details in our DB if provided
+    if (address || state || tax_id) {
+      const updatePayload: any = {};
+      if (address !== undefined) updatePayload.address = address;
+      if (state !== undefined) updatePayload.state = state;
+      if (tax_id !== undefined) updatePayload.tax_id = tax_id;
+
+      const { error: updateDbError } = await ctx.supabase
+        .from("accounts")
+        .update(updatePayload)
+        .eq("id", account.id);
+        
+      if (updateDbError) {
+        console.error("Failed to update billing details in DB", updateDbError);
+      }
+    }
+
     let customer_id = account.razorpay_customer_id;
 
-    // 2. Create customer if one doesn't exist
+    // 2. Create or Update customer
+    const customerPayload: any = {
+      name: account.name,
+      notes: {
+        account_id: account.id,
+      },
+    };
+    if (tax_id) customerPayload.gstin = tax_id;
+
     if (!customer_id) {
-      const customer = await razorpay.customers.create({
-        name: account.name,
-        notes: {
-          account_id: account.id,
-        },
-      });
+      const customer = await razorpay.customers.create(customerPayload);
       customer_id = customer.id;
 
       // Update account with new customer_id
@@ -67,6 +88,15 @@ export async function POST(request: Request) {
 
       if (updateError) {
         throw new Error("Failed to link Razorpay customer to account");
+      }
+    } else if (tax_id) {
+      // If customer exists and we have a new tax_id, update them
+      try {
+        await razorpay.customers.edit(customer_id, {
+          gstin: tax_id
+        } as any);
+      } catch (updateErr) {
+        console.error("Failed to update Razorpay customer GSTIN:", updateErr);
       }
     }
 

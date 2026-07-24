@@ -1,11 +1,9 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import Link from "next/link";
 import { Check, Lock, Globe, Sparkles, ChevronDown, ChevronUp, X } from "lucide-react";
-import { RazorpayCheckoutButton } from "@/components/billing/RazorpayCheckoutButton";
-
-type Currency = "USD" | "INR";
-
+import { PRICING_PLANS, type Currency } from "@/lib/pricing-plans";
 const FEATURE_COMPARISON_CATEGORIES = [
   {
     category: "Messaging & WhatsApp API Infrastructure",
@@ -52,98 +50,6 @@ const FEATURE_COMPARISON_CATEGORIES = [
   }
 ];
 
-interface PricingPlanConfig {
-  key: "starter" | "pro" | "enterprise";
-  planIds: {
-    USD: string;
-    INR: string;
-  };
-  name: string;
-  badge?: string;
-  tagline: string;
-  description: string;
-  popular?: boolean;
-  prices: {
-    USD: { monthly: number; yearly: number };
-    INR: { monthly: number; yearly: number };
-  };
-  features: string[];
-}
-
-const PRICING_PLANS: PricingPlanConfig[] = [
-  {
-    key: "starter",
-    planIds: {
-      USD: "plan_TGlmOwr6WFViTm",
-      INR: "plan_TGm2jZqWasg4gv"
-    },
-    name: "Starter",
-    tagline: "⚡ Best Value for Solo Sellers & Fast Launch",
-    description: "Launch your official WhatsApp CRM in minutes with zero setup friction.",
-    popular: false,
-    prices: {
-      USD: { monthly: 9, yearly: 7 },
-      INR: { monthly: 899, yearly: 719 }
-    },
-    features: [
-      "3 Included User Seats (+$5 / ₹399 per extra seat)",
-      "1 Connected WhatsApp Business Number",
-      "10,000 High-Speed Messages / month Included",
-      "Shared Customer Team Inbox & Contact CRM",
-      "Instant PDF Quotation & Invoice Builder",
-      "Smart Lead Tags & Customer Filters"
-    ]
-  },
-  {
-    key: "pro",
-    planIds: {
-      USD: "plan_TGlmP9jI9GAgiW",
-      INR: "plan_TGm2krRDX0Cz7Z"
-    },
-    name: "Pro Plan",
-    badge: "🔥 MOST POPULAR",
-    tagline: "For Growing Sales Teams & High Velocity",
-    description: "Automate sales, capture 100% of leads, and close deals 3x faster with AI.",
-    popular: true,
-    prices: {
-      USD: { monthly: 19, yearly: 15 },
-      INR: { monthly: 1899, yearly: 1519 }
-    },
-    features: [
-      "5 Included Team Seats (+$7 / ₹499 per extra seat)",
-      "1 Connected WhatsApp Business Number",
-      "50,000 High-Speed Messages / month",
-      "Visual Kanban Sales Pipeline (Drag & Drop)",
-      "24/7 AI Copilot (Auto-Drafts & Answers)",
-      "No-Code Lead Auto-Assign & Follow-up Bot",
-      "Instant Quotations & Invoices Generator"
-    ]
-  },
-  {
-    key: "enterprise",
-    planIds: {
-      USD: "plan_TGlowI487XtXtu",
-      INR: "plan_TGm2l5UsC0DXUT"
-    },
-    name: "Enterprise",
-    tagline: "For Multi-Brand Corporate Scale & Integration",
-    description: "Multi-number WhatsApp suite, custom-trained AI, developer APIs, and dedicated SLA.",
-    popular: false,
-    prices: {
-      USD: { monthly: 49, yearly: 39 },
-      INR: { monthly: 4899, yearly: 3919 }
-    },
-    features: [
-      "10 Included Team Seats (+$10 / ₹699 per extra seat)",
-      "Multi-WhatsApp Numbers Support (Multi-WABA)",
-      "Unlimited Messages & Dedicated Delivery Server",
-      "Custom-Trained AI Agent on Company PDFs & FAQs",
-      "Unlimited CRM Pipelines & Multi-Department Workspaces",
-      "Developer REST APIs, Webhooks & ERP Sync",
-      "White-Glove Onboarding & Dedicated Account Engineer"
-    ]
-  }
-];
 
 export function PricingSection() {
   const [isAnnual, setIsAnnual] = useState(false);
@@ -330,17 +236,16 @@ export function PricingSection() {
                 </div>
 
                 <div className="pt-4 border-t border-white/10">
-                  <RazorpayCheckoutButton 
-                    planId={plan.planIds[currency]}
-                    planTier={plan.key}
-                    label={`Subscribe for ${symbol}${activePrice}`}
-                    variant={plan.popular ? "default" : "outline"}
-                    className={
+                  <Link 
+                    href={`/checkout/${plan.key}?currency=${currency}&billing=${isAnnual ? "yearly" : "monthly"}`}
+                    className={`flex items-center justify-center ${
                       plan.popular
                         ? "w-full rounded-full bg-gradient-to-r from-primary to-blue-600 hover:from-primary/90 hover:to-blue-600/90 text-white font-extrabold shadow-[0_0_25px_rgba(var(--primary),0.4)] h-12 text-md transition-all hover:scale-[1.02]"
-                        : "w-full rounded-full border-white/20 bg-white/5 hover:bg-white/10 text-white h-12"
-                    }
-                  />
+                        : "w-full rounded-full border-white/20 border bg-white/5 hover:bg-white/10 text-white h-12 transition-all"
+                    }`}
+                  >
+                    Subscribe for {symbol}{activePrice}
+                  </Link>
                 </div>
               </div>
             );

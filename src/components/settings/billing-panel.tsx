@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import { Zap, Check, ShieldCheck, Lock, Sparkles, MessageSquare, Users, Database, Layers, Globe, ChevronDown, ChevronUp, X } from "lucide-react";
 import { SettingsPanelHead } from "./settings-panel-head";
 import { RazorpayCheckoutButton } from "@/components/billing/RazorpayCheckoutButton";
@@ -476,17 +477,16 @@ export function BillingPanel() {
                       <ShieldCheck className="h-4 w-4" /> Current Active Plan
                     </div>
                   ) : (
-                    <RazorpayCheckoutButton 
-                      planId={currentPlanId}
-                      planTier={plan.name.toLowerCase().includes("starter") ? "starter" : plan.name.toLowerCase().includes("pro") ? "pro" : "enterprise"} 
-                      label={`Subscribe (${symbol}${activePrice})`}
-                      variant={plan.popular ? "default" : "outline"}
-                      className={
+                    <Link 
+                      href={`/checkout/${plan.name.toLowerCase().includes("starter") ? "starter" : plan.name.toLowerCase().includes("pro") ? "pro" : "enterprise"}?currency=${currency}&billing=${isAnnual ? "yearly" : "monthly"}`}
+                      className={`flex items-center justify-center ${
                         plan.popular
                           ? "w-full rounded-xl bg-gradient-to-r from-primary to-blue-600 hover:from-primary/90 hover:to-blue-600/90 text-white font-extrabold shadow-[0_0_20px_rgba(var(--primary),0.35)] h-11 transition-all hover:scale-[1.02]"
-                          : "w-full rounded-xl border-border hover:bg-accent hover:text-accent-foreground h-11"
-                      }
-                    />
+                          : "w-full rounded-xl border border-border bg-card hover:bg-accent hover:text-accent-foreground text-foreground font-semibold h-11"
+                      }`}
+                    >
+                      Subscribe ({symbol}{activePrice})
+                    </Link>
                   )}
                 </div>
               </div>
