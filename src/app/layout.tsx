@@ -18,6 +18,9 @@ import {
 const inter = Inter({
   variable: "--font-sans",
   subsets: ["latin"],
+  display: "swap",
+  fallback: ["system-ui", "sans-serif"],
+  adjustFontFallback: false,
 });
 
 export const metadata: Metadata = {

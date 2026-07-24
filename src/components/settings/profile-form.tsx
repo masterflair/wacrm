@@ -6,6 +6,7 @@ import { Loader2, Upload, Trash2, Mail, CircleAlert } from 'lucide-react';
 
 import { createClient } from '@/lib/supabase/client';
 import { useAuth } from '@/hooks/use-auth';
+import { formatSimpleId } from '@/lib/id-formatter';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -323,7 +324,7 @@ export function ProfileForm() {
               <div className="sm:col-span-2">
                 <dt className="text-muted-foreground">{t('userId')}</dt>
                 <dd className="mt-0.5 break-all font-mono text-xs text-muted-foreground">
-                  {user?.id ?? '—'}
+                  {user?.id ? formatSimpleId(user.id) : '—'}
                 </dd>
               </div>
             </dl>

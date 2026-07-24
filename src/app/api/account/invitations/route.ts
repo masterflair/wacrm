@@ -214,6 +214,42 @@ export async function POST(request: Request) {
       label = trimmed === "" ? null : trimmed;
     }
 
+    // --- Check Team Seat Limits ---
+    // Get account plan
+    const { data: accData } = await ctx.supabase
+      .from("accounts")
+      .select("plan_tier")
+      .eq("id", ctx.accountId)
+      .single();
+      
+    // Default to starter tier included seats (3) if not found
+    const planTier = accData?.plan_tier || "starter";
+    // Hardcode seat limits for backend to avoid circular imports or just use a simple switch:
+    const maxSeats = planTier === "enterprise" ? 10 : planTier === "pro" ? 5 : 3;
+
+    // Count existing members
+    const { count: memberCount } = await ctx.supabase
+      .from("account_members")
+      .select("*", { count: "exact", head: true })
+      .eq("account_id", ctx.accountId);
+
+    // Count pending valid invitations
+    const { count: inviteCount } = await ctx.supabase
+      .from("account_invitations")
+      .select("*", { count: "exact", head: true })
+      .eq("account_id", ctx.accountId)
+      .gt("expires_at", new Date().toISOString());
+
+    const totalOccupied = (memberCount || 0) + (inviteCount || 0);
+
+    if (totalOccupied >= maxSeats) {
+      return NextResponse.json(
+        { error: `Seat limit reached (${maxSeats}/${maxSeats}). Upgrade your plan to invite more members.` },
+        { status: 403 },
+      );
+    }
+    // --- End Check ---
+
     const { token, hash } = generateInviteToken();
 
     const { data, error } = await ctx.supabase

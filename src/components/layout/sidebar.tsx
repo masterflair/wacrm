@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { WhatsAppIcon } from "@/components/ui/whatsapp-icon";
 import { useEffect } from "react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/use-auth";
@@ -11,10 +12,10 @@ import {
   Bell,
   Bot,
   Crown,
+  FileText,
   GitBranch,
   LayoutDashboard,
   LogOut,
-  MessageSquare,
   Radio,
   Settings,
   Shield,
@@ -25,6 +26,7 @@ import {
   Workflow,
   X,
   Zap,
+  Lock,
 } from "lucide-react";
 import type { AccountRole } from "@/lib/auth/roles";
 
@@ -91,11 +93,12 @@ interface NavItem {
 
 const navItems: NavItem[] = [
   { href: "/dashboard", labelKey: "dashboard", icon: LayoutDashboard },
-  { href: "/inbox", labelKey: "inbox", icon: MessageSquare },
+  { href: "/inbox", labelKey: "inbox", icon: WhatsAppIcon },
   { href: "/notifications", labelKey: "notifications", icon: Bell },
   { href: "/contacts", labelKey: "contacts", icon: Users },
   { href: "/pipelines", labelKey: "pipelines", icon: GitBranch },
   { href: "/broadcasts", labelKey: "broadcasts", icon: Radio },
+  { href: "/quotations", labelKey: "quotations", icon: FileText },
   { href: "/automations", labelKey: "automations", icon: Zap },
   { href: "/flows", labelKey: "flows", icon: Workflow, beta: true },
   { href: "/agents", labelKey: "aiAgents", icon: Bot },
@@ -112,6 +115,7 @@ interface SidebarProps {
 }
 
 import { useTranslations } from "next-intl";
+import { usePlanLimits } from "@/hooks/use-plan-limits";
 
 export function Sidebar({ open = false, onClose }: SidebarProps) {
   const t = useTranslations("Sidebar");
@@ -119,6 +123,8 @@ export function Sidebar({ open = false, onClose }: SidebarProps) {
   const { profile, profileLoading, account, accountRole, signOut } = useAuth();
   const totalUnread = useTotalUnread();
   const unreadNotifications = useUnreadNotifications();
+  const { limits } = usePlanLimits();
+
   // Only surface the account-name strip when it actually carries
   // information. A solo user's personal account is named after them
   // (the 017 signup trigger seeds it from `full_name`), so showing it
@@ -221,6 +227,14 @@ export function Sidebar({ open = false, onClose }: SidebarProps) {
               const showNotificationBadge =
                 item.href === "/notifications" && unreadNotifications > 0;
 
+              // Check Feature Locks
+              let isLocked = false;
+              if (limits) {
+                if (item.href === "/pipelines" && !limits.hasKanbanPipeline) isLocked = true;
+                if (item.href === "/automations" && !limits.hasAutoReplyBot) isLocked = true;
+                if (item.href === "/agents" && !limits.hasAiCopilot) isLocked = true;
+              }
+
               return (
                 <li key={item.href}>
                   <Link
@@ -234,7 +248,10 @@ export function Sidebar({ open = false, onClose }: SidebarProps) {
                     )}
                   >
                     <item.icon className="h-4 w-4" />
-                    <span className="flex-1">{t(item.labelKey as string)}</span>
+                    <span className="flex-1 flex items-center gap-2">
+                      {t(item.labelKey as string)}
+                      {isLocked && <Lock className="h-3 w-3 text-muted-foreground/60" />}
+                    </span>
                     {item.beta && (
                       <span
                         aria-label={t("beta")}

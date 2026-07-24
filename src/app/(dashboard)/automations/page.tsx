@@ -43,6 +43,8 @@ import {
 import { AUTOMATION_TEMPLATES, type TemplateSlug } from "@/lib/automations/templates"
 import { triggerMeta, formatRelative } from "@/lib/automations/trigger-meta"
 import { cn } from "@/lib/utils"
+import { Paywall } from "@/components/ui/paywall"
+import { usePlanLimits } from "@/hooks/use-plan-limits"
 
 const TEMPLATE_ORDER: TemplateSlug[] = [
   "welcome_message",
@@ -62,10 +64,14 @@ export default function AutomationsPage() {
   const router = useRouter()
   const canCreate = useCan("send-messages")
   const t = useTranslations("Automations.list")
+  const { limits, isLoading: isLimitsLoading } = usePlanLimits()
+
   const [automations, setAutomations] = useState<Automation[] | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [pendingDelete, setPendingDelete] = useState<Automation | null>(null)
   const [deleting, setDeleting] = useState(false)
+
+
 
   async function load() {
     try {
@@ -145,6 +151,19 @@ export default function AutomationsPage() {
           {t("retry")}
         </Button>
       </div>
+    )
+  }
+  if (isLimitsLoading) {
+    return <div className="flex h-[calc(100vh-4rem)] items-center justify-center"><div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" /></div>
+  }
+
+  if (limits && !limits.hasAutoReplyBot) {
+    return (
+      <Paywall 
+        title="Automated Workflows" 
+        description="No-code automations, Auto-Replies, and Lead Qualifiers are Pro features. Upgrade your plan to automate your WhatsApp sales process." 
+        planName="Pro" 
+      />
     )
   }
 

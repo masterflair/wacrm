@@ -24,6 +24,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Loader2, AlertTriangle } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 
@@ -55,7 +56,22 @@ export function ContactForm({
   const [phone, setPhone] = useState('');
   const [email, setEmail] = useState('');
   const [company, setCompany] = useState('');
+  const [address, setAddress] = useState('');
+  const [hasGst, setHasGst] = useState(false);
+  const [taxId, setTaxId] = useState('');
+  const [state, setState] = useState('');
   const [saving, setSaving] = useState(false);
+
+  const INDIAN_STATES = [
+    "Andhra Pradesh", "Arunachal Pradesh", "Assam", "Bihar", "Chhattisgarh",
+    "Goa", "Gujarat", "Haryana", "Himachal Pradesh", "Jharkhand",
+    "Karnataka", "Kerala", "Madhya Pradesh", "Maharashtra", "Manipur",
+    "Meghalaya", "Mizoram", "Nagaland", "Odisha", "Punjab",
+    "Rajasthan", "Sikkim", "Tamil Nadu", "Telangana", "Tripura",
+    "Uttar Pradesh", "Uttarakhand", "West Bengal",
+    "Andaman and Nicobar Islands", "Chandigarh", "Dadra and Nagar Haveli and Daman and Diu",
+    "Delhi", "Jammu and Kashmir", "Ladakh", "Lakshadweep", "Puducherry"
+  ];
 
   // Duplicate-phone detection for NEW contacts. `exact` (same digits)
   // hard-blocks the save; a fuzzy trunk-variant match only warns. The
@@ -76,6 +92,18 @@ export function ContactForm({
       setPhone(contact?.phone ?? '');
       setEmail(contact?.email ?? '');
       setCompany(contact?.company ?? '');
+      
+      const initialTaxIdStr = contact?.tax_id ?? '';
+      const parts = initialTaxIdStr.split('::');
+      const initialGst = parts[0] || '';
+      const initialStateStr = parts[1] || '';
+      const initialAddress = parts.slice(2).join('::') || '';
+      
+      setHasGst(!!initialGst || !!initialStateStr);
+      setTaxId(initialGst);
+      setState(initialStateStr);
+      setAddress(initialAddress);
+      
       setSelectedTagIds(contactTags.map((ct) => ct.tag_id));
       setDupMatch(null);
       fetchTags();
@@ -157,6 +185,7 @@ export function ContactForm({
             phone: phone.trim(),
             email: email.trim() || null,
             company: company.trim() || null,
+            tax_id: (taxId.trim() || state.trim() || address.trim()) ? `${taxId.trim()}::${state.trim()}::${address.trim()}` : null,
             updated_at: new Date().toISOString(),
           })
           .eq('id', contactId);
@@ -171,6 +200,7 @@ export function ContactForm({
             phone: phone.trim(),
             email: email.trim() || null,
             company: company.trim() || null,
+            tax_id: (taxId.trim() || state.trim() || address.trim()) ? `${taxId.trim()}::${state.trim()}::${address.trim()}` : null,
           })
           .select('id')
           .single();
@@ -324,6 +354,68 @@ export function ContactForm({
           </div>
 
           <div className="space-y-2">
+            <Label htmlFor="cf-address" className="text-muted-foreground">
+              Address
+            </Label>
+            <Input
+              id="cf-address"
+              value={address}
+              onChange={(e) => setAddress(e.target.value)}
+              placeholder="e.g. 123 Main St, City"
+              className="bg-muted border-border text-foreground placeholder:text-muted-foreground"
+            />
+          </div>
+
+          <div className="space-y-4 pt-2">
+            <div className="flex items-center space-x-2">
+              <Checkbox 
+                id="cf-has-gst" 
+                checked={hasGst}
+                onCheckedChange={(checked) => setHasGst(!!checked)}
+              />
+              <Label htmlFor="cf-has-gst" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+                Has GST?
+              </Label>
+            </div>
+
+            {hasGst && (
+              <div className="space-y-4 pt-2 border-t border-border/50">
+                <div className="space-y-2">
+                  <Label htmlFor="cf-tax-id" className="text-muted-foreground">
+                    Tax ID / GSTIN
+                  </Label>
+                  <Input
+                    id="cf-tax-id"
+                    value={taxId}
+                    onChange={(e) => setTaxId(e.target.value)}
+                    placeholder="e.g. 27AAAAA0000A1Z5"
+                    className="bg-muted border-border text-foreground placeholder:text-muted-foreground"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="cf-state" className="text-muted-foreground">
+                    State
+                  </Label>
+                  <Input
+                    id="cf-state"
+                    list="indian-states"
+                    value={state}
+                    onChange={(e) => setState(e.target.value)}
+                    placeholder="Search and select state..."
+                    className="bg-muted border-border text-foreground placeholder:text-muted-foreground"
+                    autoComplete="off"
+                  />
+                  <datalist id="indian-states">
+                    {INDIAN_STATES.map((s) => (
+                      <option key={s} value={s} />
+                    ))}
+                  </datalist>
+                </div>
+              </div>
+            )}
+          </div>
+
+          <div className="space-y-2 pt-2">
             <Label className="text-muted-foreground">{t('tagsLabel')}</Label>
             {loadingTags ? (
               <div className="flex items-center gap-2 text-muted-foreground text-sm">

@@ -66,6 +66,7 @@ import { useTranslations } from 'next-intl';
 import { RequireRole } from '@/components/auth/require-role';
 import { useAuth } from '@/hooks/use-auth';
 import { usePresence } from '@/hooks/use-presence';
+import { usePlanLimits } from '@/hooks/use-plan-limits';
 import type { AccountRole } from '@/lib/auth/roles';
 import { presenceLabel, summarize } from '@/lib/presence';
 import {
@@ -129,6 +130,7 @@ export function MembersTab() {
   const tRoles = useTranslations('Settings.roles');
   const { user, canManageMembers } = useAuth();
   const { getPresence, getRow, now } = usePresence();
+  const { limits } = usePlanLimits();
 
   const [members, setMembers] = useState<Member[]>([]);
   const [invitations, setInvitations] = useState<Invitation[]>([]);
@@ -280,6 +282,10 @@ export function MembersTab() {
     );
   }
 
+  const maxSeats = limits ? limits.includedSeats : 3;
+  const totalOccupiedSeats = members.length + invitations.length;
+  const isSeatLimitReached = totalOccupiedSeats >= maxSeats;
+
   return (
     <section className="animate-in fade-in-50 space-y-6 duration-200">
       <SettingsPanelHead
@@ -287,10 +293,22 @@ export function MembersTab() {
         description={t('description')}
         action={
           <RequireRole min="admin">
-            <Button onClick={() => setInviteOpen(true)}>
-              <Plus className="size-4" />
-              {t('inviteMember')}
-            </Button>
+            <Tooltip>
+              <TooltipTrigger render={<span tabIndex={0} className="inline-block" />}>
+                <Button 
+                  onClick={() => setInviteOpen(true)}
+                  disabled={isSeatLimitReached}
+                >
+                  <Plus className="size-4" />
+                  {t('inviteMember')}
+                </Button>
+              </TooltipTrigger>
+              {isSeatLimitReached && (
+                <TooltipContent>
+                  Seat limit reached ({maxSeats}/{maxSeats}). Upgrade your plan or buy extra seats.
+                </TooltipContent>
+              )}
+            </Tooltip>
           </RequireRole>
         }
       />

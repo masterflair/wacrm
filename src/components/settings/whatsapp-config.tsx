@@ -21,6 +21,8 @@ import { useTranslations } from 'next-intl';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Switch } from '@/components/ui/switch';
+import { WhatsAppIcon } from '@/components/ui/whatsapp-icon';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { SettingsPanelHead } from './settings-panel-head';
@@ -631,7 +633,7 @@ export function WhatsAppConfig() {
         <Card className="border-primary/20 bg-primary/5">
           <CardHeader>
             <CardTitle className="text-foreground flex items-center gap-2">
-              <FacebookIcon className="size-5 text-[#1877F2]" />
+              <WhatsAppIcon className="size-5 text-[#25D366]" />
               Connect WhatsApp
             </CardTitle>
             <CardDescription className="text-muted-foreground">
@@ -642,14 +644,14 @@ export function WhatsAppConfig() {
             <Button
               onClick={handleFacebookLogin}
               disabled={connectingFacebook}
-              className="w-full sm:w-auto bg-[#1877F2] hover:bg-[#1877F2]/90 text-white gap-2"
+              className="w-full sm:w-auto bg-[#25D366] hover:bg-[#25D366]/90 text-white gap-2"
             >
               {connectingFacebook ? (
                 <Loader2 className="size-4 animate-spin" />
               ) : (
-                <FacebookIcon className="size-4 fill-current" />
+                <WhatsAppIcon className="size-4 fill-current mr-2" />
               )}
-              Log in with Facebook
+              Connect WhatsApp
             </Button>
           </CardContent>
         </Card>

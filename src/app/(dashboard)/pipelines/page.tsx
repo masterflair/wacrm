@@ -30,6 +30,8 @@ import { useCan } from "@/hooks/use-can";
 import { useAuth } from "@/hooks/use-auth";
 import { GatedButton } from "@/components/ui/gated-button";
 import { useTranslations } from "next-intl";
+import { usePlanLimits } from "@/hooks/use-plan-limits";
+import { Paywall } from "@/components/ui/paywall";
 
 // Pipeline creation is admin-class (settings-tier write under
 // the new RLS); deal creation is operational and only requires
@@ -51,10 +53,14 @@ export default function PipelinesPage() {
   const canEditSettings = useCan("edit-settings");
   const canCreateDeals = useCan("send-messages");
   const { accountId } = useAuth();
+  const { limits, isLoading: isLimitsLoading } = usePlanLimits();
 
   const [pipelines, setPipelines] = useState<Pipeline[]>([]);
   const [selectedPipelineId, setSelectedPipelineId] = useState<string>("");
   const [stages, setStages] = useState<PipelineStage[]>([]);
+
+
+
   const [deals, setDeals] = useState<Deal[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -296,6 +302,20 @@ export default function PipelinesPage() {
   }
 
   const selectedPipeline = pipelines.find((p) => p.id === selectedPipelineId);
+
+  if (isLimitsLoading) {
+    return <div className="flex h-[calc(100vh-4rem)] items-center justify-center"><div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" /></div>;
+  }
+
+  if (limits && !limits.hasKanbanPipeline) {
+    return (
+      <Paywall 
+        title="Visual Kanban Pipelines" 
+        description="Drag & Drop Kanban boards are a Pro feature. Upgrade your plan to visualize your sales pipeline and close deals faster." 
+        planName="Pro" 
+      />
+    );
+  }
 
   if (loading) {
     return (

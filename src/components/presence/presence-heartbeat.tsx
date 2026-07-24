@@ -2,7 +2,7 @@
 
 import { useEffect, useRef } from "react";
 
-import { createClient } from "@/lib/supabase/client";
+import { createBrowserClient } from '@supabase/ssr';
 import { useAuth } from "@/hooks/use-auth";
 import { HEARTBEAT_MS, IDLE_AFTER_MS, type StoredPresence } from "@/lib/presence";
 
@@ -27,13 +27,42 @@ export function PresenceHeartbeat() {
   const lastActivityRef = useRef<number>(0);
 
   useEffect(() => {
-    // Hold off until the account is known. Beating during the brief
-    // window on a fresh signup — authed but profile/account row not yet
-    // created — would make touch_presence raise "No account for caller"
-    // and log a spurious error. The effect re-runs once accountId lands.
     if (!accountId) return;
 
-    const supabase = createClient();
+    // We use a custom XHR-based fetch for the heartbeat. Next.js 14+ aggressively 
+    // intercepts window.fetch errors and shows a full-screen dev overlay even if 
+    // we try/catch them. XHR bypasses the dev overlay.
+    const xhrFetch = (url: RequestInfo | URL, options?: RequestInit): Promise<Response> => {
+      return new Promise((resolve) => {
+        const xhr = new XMLHttpRequest();
+        xhr.open(options?.method || 'GET', url.toString());
+        
+        if (options?.headers) {
+          const headers = new Headers(options.headers as HeadersInit);
+          headers.forEach((value, key) => xhr.setRequestHeader(key, value));
+        }
+
+        xhr.onload = () => {
+          resolve(new Response(xhr.responseText, { status: xhr.status }));
+        };
+
+        xhr.onerror = () => {
+          // Resolve with 503 instead of rejecting to completely hide the network error from Next.js
+          resolve(new Response(JSON.stringify({ error: "Heartbeat Network Error" }), { status: 503 }));
+        };
+
+        xhr.send(options?.body as any);
+      });
+    };
+
+    const supabase = createBrowserClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      {
+        global: { fetch: xhrFetch }
+      }
+    );
+    
     let cancelled = false;
     let lastBeatAt = 0;
     lastActivityRef.current = Date.now();
@@ -48,28 +77,41 @@ export function PresenceHeartbeat() {
       return "online";
     };
 
-    const beat = async () => {
+    const safeBeat = async () => {
       if (cancelled) return;
-      // Coalesce bursts: a tab refocus fires visibilitychange AND focus
-      // together, so skip a beat within 1s of the last to avoid two RPCs
-      // in the same frame. The 30s interval is never affected.
       const t = Date.now();
       if (t - lastBeatAt < 1_000) return;
       lastBeatAt = t;
+
       try {
         const { error } = await supabase.rpc("touch_presence", {
           p_status: currentStatus(),
         });
+        
         if (error && !cancelled) {
-          // Non-fatal: presence is best-effort.
-          // Ignore expected network disconnects to avoid Next.js dev overlay spam.
-          if (error.message.includes("Failed to fetch")) return;
-          console.warn("[PresenceHeartbeat] touch_presence failed:", error.message);
+          const msg = String(error.message || error || "");
+          if (
+            msg.includes("Failed to fetch") ||
+            msg.includes("TypeError") ||
+            msg.includes("NetworkError") ||
+            msg.includes("Lock was released")
+          ) {
+            return;
+          }
+          console.warn("[PresenceHeartbeat] touch_presence failed:", msg);
         }
       } catch (err: any) {
         // Catch raw exceptions from fetch failures (e.g. extension blocking or offline)
-        if (err?.message?.includes("Failed to fetch") || err instanceof TypeError) return;
-        console.warn("[PresenceHeartbeat] touch_presence exception:", err);
+        const msg = String(err?.message || err || "");
+        if (
+          msg.includes("Failed to fetch") ||
+          msg.includes("TypeError") ||
+          msg.includes("NetworkError") ||
+          err instanceof TypeError
+        ) {
+          return;
+        }
+        console.warn("[PresenceHeartbeat] touch_presence exception:", msg);
       }
     };
 
@@ -85,17 +127,16 @@ export function PresenceHeartbeat() {
     );
 
     // Returning to the tab should beat immediately so a member flips
-    // back to online without a 30s wait. The debounce in beat() absorbs
-    // the visibilitychange + focus double-fire.
+    // back to online without a 30s wait.
     const onReturn = () => {
       if (!document.hidden) markActive();
-      void beat();
+      safeBeat();
     };
     document.addEventListener("visibilitychange", onReturn);
     window.addEventListener("focus", onReturn);
 
-    void beat();
-    const interval = setInterval(() => void beat(), HEARTBEAT_MS);
+    safeBeat();
+    const interval = setInterval(safeBeat, HEARTBEAT_MS);
 
     return () => {
       cancelled = true;

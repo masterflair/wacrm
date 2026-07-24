@@ -9,6 +9,7 @@ import { useTheme } from '@/hooks/use-theme';
 import { SettingsRail } from '@/components/settings/settings-rail';
 import { SettingsOverview } from '@/components/settings/settings-overview';
 import { ProfileForm } from '@/components/settings/profile-form';
+import { OrganizationSettings } from '@/components/settings/organization-settings';
 import { SecurityPanel } from '@/components/settings/security-panel';
 import { AppearancePanel } from '@/components/settings/appearance-panel';
 import { WhatsAppConfig } from '@/components/settings/whatsapp-config';
@@ -16,8 +17,10 @@ import { TemplateManager } from '@/components/settings/template-manager';
 import { QuickRepliesManager } from '@/components/settings/quick-replies-manager';
 import { FieldsAndTagsPanel } from '@/components/settings/fields-and-tags-panel';
 import { DealsSettings } from '@/components/settings/deals-settings';
+import { ProductsSettings } from '@/components/settings/products-settings';
 import { MembersTab } from '@/components/settings/members-tab';
 import { ApiKeysSettings } from '@/components/settings/api-keys-settings';
+import { BillingPanel } from '@/components/settings/billing-panel';
 import {
   resolveSection,
   type SettingsSection,
@@ -72,6 +75,7 @@ function SettingsPageInner() {
   const panel: Record<SettingsSection, ReactNode> = {
     overview: <SettingsOverview onSelect={go} />,
     profile: <ProfileForm />,
+    organization: <OrganizationSettings />,
     security: <SecurityPanel />,
     appearance: <AppearancePanel />,
     whatsapp: <WhatsAppConfig />,
@@ -79,8 +83,10 @@ function SettingsPageInner() {
     'quick-replies': <QuickRepliesManager />,
     fields: <FieldsAndTagsPanel />,
     deals: <DealsSettings />,
+    products: <ProductsSettings />,
     members: <MembersTab />,
     api: <ApiKeysSettings />,
+    billing: <BillingPanel />,
   };
 
   return (

@@ -55,6 +55,13 @@ export interface Profile {
 export interface Account {
   id: string;
   name: string;
+  email?: string;
+  phone?: string;
+  address?: string;
+  website?: string;
+  logo_url?: string;
+  tax_id?: string;
+  default_tax_rate?: number;
   /** auth.users.id of the immutable owner. */
   owner_user_id: string;
   created_at: string;
@@ -107,6 +114,7 @@ export interface Contact {
   name?: string;
   email?: string;
   company?: string;
+  tax_id?: string;
   avatar_url?: string;
   created_at: string;
   updated_at: string;
@@ -349,6 +357,35 @@ export interface PipelineStage {
   position: number;
   color: string;
   created_at: string;
+}
+
+export interface QuotationItem {
+    id: string;
+    quotation_id: string;
+    description: string;
+    quantity: number;
+    unit?: string;
+    unit_price: number;
+    total_price: number;
+    taxable: boolean;
+    tax_rate: number;
+    tax_amount: number;
+    created_at: string;
+}
+
+export type ProductStatus = 'active' | 'archived';
+
+export interface Product {
+    id: string;
+    user_id: string; // account tenancy key
+    name: string;
+    description?: string;
+    default_price: number;
+    unit: string | null;
+    tax_rate: number | null;
+    status: ProductStatus;
+    created_at: string;
+    updated_at: string;
 }
 
 export type DealStatus = 'open' | 'won' | 'lost';

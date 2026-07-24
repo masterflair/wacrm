@@ -16,6 +16,7 @@ import {
   User,
   Briefcase,
   Pencil,
+  FileText,
 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -24,21 +25,24 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { format } from "date-fns";
 import { useTranslations } from "next-intl";
+import Link from "next/link";
 import { addContactTag, deleteContactTag } from "@/lib/contacts/tag-api";
 import { DealForm } from "@/components/pipelines/deal-form";
 
 interface ContactSidebarProps {
   contact: Contact | null;
   onContactUpdated?: (contact: Contact) => void;
+  conversationId?: string;
 }
 
-export function ContactSidebar({ contact, onContactUpdated }: ContactSidebarProps) {
+export function ContactSidebar({ contact, onContactUpdated, conversationId }: ContactSidebarProps) {
   const tSidebar = useTranslations("Inbox.sidebar");
   const tThread = useTranslations("Inbox.messageThread");
   const tContacts = useTranslations("Contacts");
 
   const { accountId } = useAuth();
   const [deals, setDeals] = useState<Deal[]>([]);
+  const [quotations, setQuotations] = useState<any[]>([]);
   const [notes, setNotes] = useState<ContactNote[]>([]);
   const [allTags, setAllTags] = useState<Tag[]>([]);
   const [selectedTagIds, setSelectedTagIds] = useState<string[]>([]);
@@ -63,7 +67,7 @@ export function ContactSidebar({ contact, onContactUpdated }: ContactSidebarProp
     const supabase = createClient();
 
     // Fetch deals, notes, and tags in parallel
-    const [dealsRes, notesRes, contactTagsRes, tagsRes, pipelinesRes, stagesRes] =
+    const [dealsRes, notesRes, contactTagsRes, tagsRes, pipelinesRes, stagesRes, quotationsRes] =
       await Promise.all([
         supabase
           .from("deals")
@@ -82,6 +86,11 @@ export function ContactSidebar({ contact, onContactUpdated }: ContactSidebarProp
         supabase.from("tags").select("*").order("name"),
         supabase.from("pipelines").select("*").order("name"),
         supabase.from("pipeline_stages").select("*").order("position"),
+        supabase
+          .from("quotations")
+          .select("*")
+          .eq("contact_id", contact.id)
+          .order("created_at", { ascending: false }),
       ]);
 
     if (dealsRes.data) setDeals(dealsRes.data);
@@ -92,6 +101,7 @@ export function ContactSidebar({ contact, onContactUpdated }: ContactSidebarProp
     if (tagsRes.data) setAllTags(tagsRes.data);
     if (pipelinesRes.data) setPipelines(pipelinesRes.data);
     if (stagesRes.data) setPipelineStages(stagesRes.data);
+    if (quotationsRes.data) setQuotations(quotationsRes.data);
   }, [contact]);
 
   // Load on contact change. setContactData/setTags run inside async
@@ -548,6 +558,61 @@ export function ContactSidebar({ contact, onContactUpdated }: ContactSidebarProp
                 Create a pipeline with stages in Settings to add deals.
               </p>
             )}
+          </div>
+
+          {/* Divider */}
+          <div className="border-t border-border/30" />
+
+          {/* Quotations */}
+          <div className="space-y-3.5">
+            <div className="flex items-center justify-between gap-2 px-1">
+              <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-widest text-muted-foreground/80">
+                <FileText className="h-3 w-3 text-primary/80" />
+                Quotations
+              </div>
+              <Link href={`/quotations/new?contact_id=${contact.id}`}>
+                <Button
+                  size="xs"
+                  variant="outline"
+                  className="h-6 rounded-full px-2.5 text-[10px] font-semibold border-border/80 hover:bg-primary hover:text-primary-foreground hover:border-primary active:scale-95 transition-all cursor-pointer"
+                >
+                  Create
+                </Button>
+              </Link>
+            </div>
+            <div className="space-y-2">
+              {quotations.length === 0 ? (
+                <p className="px-1 text-xs text-muted-foreground/60 italic">No quotations yet.</p>
+              ) : (
+                quotations.map((quote) => (
+                  <Link
+                    key={quote.id}
+                    href={conversationId ? `/quotations/${quote.id}?from=inbox&c=${conversationId}` : `/quotations/${quote.id}?from=inbox`}
+                    className="group/quote flex w-full flex-col rounded-xl border border-border/50 bg-muted/20 px-4 py-3 transition-all duration-300 hover:bg-muted/40 hover:border-border hover:shadow-sm hover:-translate-y-0.5 cursor-pointer"
+                  >
+                    <div className="flex items-center justify-between">
+                      <p className="text-xs font-bold text-foreground/90 group-hover/quote:text-foreground">
+                        Quote #{quote.id.split('-')[0].toUpperCase()}
+                      </p>
+                      <span
+                        className="rounded-full px-2 py-0.5 text-[9px] font-semibold border uppercase"
+                        style={{
+                          backgroundColor: quote.status === 'sent' ? '#3b82f615' : quote.status === 'accepted' ? '#22c55e15' : quote.status === 'rejected' ? '#ef444415' : '#64748b15',
+                          color: quote.status === 'sent' ? '#3b82f6' : quote.status === 'accepted' ? '#22c55e' : quote.status === 'rejected' ? '#ef4444' : '#64748b',
+                          borderColor: quote.status === 'sent' ? '#3b82f635' : quote.status === 'accepted' ? '#22c55e35' : quote.status === 'rejected' ? '#ef444435' : '#64748b35',
+                        }}
+                      >
+                        {quote.status}
+                      </span>
+                    </div>
+                    <p className="mt-1.5 text-[11px] font-semibold font-mono text-foreground/80">
+                      {quote.currency ?? "₹"}
+                      {quote.total_amount?.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
+                    </p>
+                  </Link>
+                ))
+              )}
+            </div>
           </div>
 
           {/* Divider */}

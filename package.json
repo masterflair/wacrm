@@ -1,17 +1,17 @@
 {
-  "name": "wacrm",
+  "name": "renderaura-crm",
   "version": "0.8.0",
   "private": true,
   "description": "Self-hostable CRM template for WhatsApp built on Next.js and Supabase — shared inbox, contacts, sales pipelines, broadcasts, and no-code automations.",
   "license": "MIT",
   "author": "Arnas Donauskas",
-  "homepage": "https://github.com/ArnasDon/wacrm",
+  "homepage": "https://github.com/masterflair/renderauracrm",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/ArnasDon/wacrm.git"
+    "url": "git+https://github.com/masterflair/renderauracrm.git"
   },
   "bugs": {
-    "url": "https://github.com/ArnasDon/wacrm/issues"
+    "url": "https://github.com/masterflair/renderauracrm/issues"
   },
   "keywords": [
     "crm",
@@ -31,7 +31,7 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint",
+    "lint": "next lint",
     "typecheck": "tsc --noEmit",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
@@ -47,13 +47,18 @@
     "@supabase/ssr": "^0.12.0",
     "@supabase/supabase-js": "^2.107.0",
     "@xyflow/react": "^12.11.0",
+    "canvas-confetti": "^1.9.4",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "date-fns": "^4.4.0",
+    "html-to-image": "^1.11.13",
+    "html2pdf.js": "^0.14.0",
+    "jspdf": "^4.2.1",
     "lucide-react": "^1.22.0",
     "next": "16.2.6",
     "next-intl": "^4.13.2",
     "opus-recorder": "^8.0.5",
+    "razorpay": "^2.9.8",
     "react": "19.2.4",
     "react-dom": "19.2.4",
     "react-zoom-pan-pinch": "^4.0.3",
@@ -65,6 +70,7 @@
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
+    "@types/canvas-confetti": "^1.9.0",
     "@types/node": "^26",
     "@types/react": "^19",
     "@types/react-dom": "^19",

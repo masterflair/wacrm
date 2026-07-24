@@ -7,12 +7,14 @@ import { Sidebar } from "@/components/layout/sidebar";
 import { Header } from "@/components/layout/header";
 import { PresenceHeartbeat } from "@/components/presence/presence-heartbeat";
 
+import { OnboardingModal } from "@/components/onboarding/onboarding-modal";
+
 // Auth-gated dashboard shell. Extracted from the layout so the layout
 // itself can stay a server component and export metadata (noindex) —
 // client components can't export Next's metadata object.
 
 function DashboardShellInner({ children }: { children: React.ReactNode }) {
-  const { user, loading } = useAuth();
+  const { user, loading, profile } = useAuth();
   const router = useRouter();
   const pathname = usePathname();
   const isInbox = pathname === "/inbox";
@@ -22,11 +24,23 @@ function DashboardShellInner({ children }: { children: React.ReactNode }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const closeSidebar = useCallback(() => setSidebarOpen(false), []);
 
+  const [showOnboarding, setShowOnboarding] = useState(false);
+
   useEffect(() => {
     if (!loading && !user) {
       router.push("/login");
     }
   }, [user, loading, router]);
+
+  useEffect(() => {
+    // Show onboarding if profile is loaded and the flag is explicitly false
+    if (!loading && user) {
+      const hasCompleted = localStorage.getItem(`wacrm_onboarding_${user.id}`);
+      if (!hasCompleted) {
+        setShowOnboarding(true);
+      }
+    }
+  }, [user, loading]);
 
   if (loading) {
     return (
@@ -46,6 +60,10 @@ function DashboardShellInner({ children }: { children: React.ReactNode }) {
       {/* Reports this tab's online/away presence once we know a user is
           signed in. Headless — renders nothing. */}
       <PresenceHeartbeat />
+      <OnboardingModal 
+        isOpen={showOnboarding} 
+        onComplete={() => setShowOnboarding(false)} 
+      />
       <Sidebar open={sidebarOpen} onClose={closeSidebar} />
       <div className="flex flex-1 flex-col overflow-hidden">
         <Header onOpenSidebar={() => setSidebarOpen(true)} />

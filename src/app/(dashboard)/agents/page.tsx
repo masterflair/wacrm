@@ -9,6 +9,9 @@ import { AiConfig } from '@/components/settings/ai-config';
 import { useAuth } from '@/hooks/use-auth';
 import { canEditSettings } from '@/lib/auth/roles';
 
+import { usePlanLimits } from '@/hooks/use-plan-limits';
+import { Paywall } from '@/components/ui/paywall';
+
 type Tab = 'playground' | 'setup' | 'usage';
 
 export default function AgentsPage() {
@@ -16,6 +19,7 @@ export default function AgentsPage() {
   const canViewUsage = accountRole ? canEditSettings(accountRole) : false;
   const [tab, setTab] = useState<Tab>('playground');
   const [decided, setDecided] = useState(false);
+  const { limits, isLoading: isLimitsLoading } = usePlanLimits();
 
   // Land first-time users on Setup, returning users on the Playground.
   useEffect(() => {
@@ -35,6 +39,20 @@ export default function AgentsPage() {
       cancelled = true;
     };
   }, []);
+
+  if (isLimitsLoading) {
+    return <div className="flex h-[calc(100vh-4rem)] items-center justify-center"><div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" /></div>
+  }
+
+  if (limits && !limits.hasAiCopilot) {
+    return (
+      <Paywall 
+        title="AI Agents & Copilot" 
+        description="24/7 AI Auto-Replies, custom training on your PDFs, and AI-drafted responses are a Pro feature. Upgrade your plan to supercharge your WhatsApp CRM with AI." 
+        planName="Pro" 
+      />
+    )
+  }
 
   return (
     <div>

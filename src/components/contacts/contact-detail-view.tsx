@@ -26,6 +26,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { Checkbox } from '@/components/ui/checkbox';
 import {
   Phone,
   Mail,
@@ -74,7 +75,22 @@ export function ContactDetailView({
   const [editPhone, setEditPhone] = useState('');
   const [editEmail, setEditEmail] = useState('');
   const [editCompany, setEditCompany] = useState('');
+  const [editAddress, setEditAddress] = useState('');
+  const [hasGst, setHasGst] = useState(false);
+  const [editTaxId, setEditTaxId] = useState('');
+  const [editState, setEditState] = useState('');
   const [savingDetails, setSavingDetails] = useState(false);
+
+  const INDIAN_STATES = [
+    "Andhra Pradesh", "Arunachal Pradesh", "Assam", "Bihar", "Chhattisgarh",
+    "Goa", "Gujarat", "Haryana", "Himachal Pradesh", "Jharkhand",
+    "Karnataka", "Kerala", "Madhya Pradesh", "Maharashtra", "Manipur",
+    "Meghalaya", "Mizoram", "Nagaland", "Odisha", "Punjab",
+    "Rajasthan", "Sikkim", "Tamil Nadu", "Telangana", "Tripura",
+    "Uttar Pradesh", "Uttarakhand", "West Bengal",
+    "Andaman and Nicobar Islands", "Chandigarh", "Dadra and Nagar Haveli and Daman and Diu",
+    "Delhi", "Jammu and Kashmir", "Ladakh", "Lakshadweep", "Puducherry"
+  ];
 
   // Tags tab
   const [allTags, setAllTags] = useState<Tag[]>([]);
@@ -115,6 +131,17 @@ export function ContactDetailView({
       setEditPhone(data.phone);
       setEditEmail(data.email ?? '');
       setEditCompany(data.company ?? '');
+      
+      const initialTaxIdStr = data.tax_id ?? '';
+      const parts = initialTaxIdStr.split('::');
+      const initialGst = parts[0] || '';
+      const initialStateStr = parts[1] || '';
+      const initialAddress = parts.slice(2).join('::') || '';
+      
+      setHasGst(!!initialGst || !!initialStateStr);
+      setEditTaxId(initialGst);
+      setEditState(initialStateStr);
+      setEditAddress(initialAddress);
     }
     setLoading(false);
   }, [contactId, supabase]);
@@ -216,6 +243,7 @@ export function ContactDetailView({
         phone: editPhone.trim(),
         email: editEmail.trim() || null,
         company: editCompany.trim() || null,
+        tax_id: (editTaxId.trim() || editState.trim() || editAddress.trim()) ? `${editTaxId.trim()}::${editState.trim()}::${editAddress.trim()}` : null,
         updated_at: new Date().toISOString(),
       })
       .eq('id', contactId);
@@ -569,6 +597,58 @@ export function ContactDetailView({
                       onChange={(e) => setEditCompany(e.target.value)}
                       className="bg-background border-border/80 focus:border-primary/50 text-foreground h-9 text-sm rounded-lg"
                     />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label className="text-xs font-semibold text-muted-foreground tracking-wider uppercase">Address</Label>
+                    <Input
+                      value={editAddress}
+                      onChange={(e) => setEditAddress(e.target.value)}
+                      className="bg-background border-border/80 focus:border-primary/50 text-foreground h-9 text-sm rounded-lg"
+                      placeholder="e.g. 123 Main St, City"
+                    />
+                  </div>
+                  
+                  <div className="space-y-4 pt-2">
+                    <div className="flex items-center space-x-2">
+                      <Checkbox 
+                        id="cd-has-gst" 
+                        checked={hasGst}
+                        onCheckedChange={(checked) => setHasGst(!!checked)}
+                      />
+                      <Label htmlFor="cd-has-gst" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+                        Has GST?
+                      </Label>
+                    </div>
+
+                    {hasGst && (
+                      <div className="space-y-4 pt-2 border-t border-border/50">
+                        <div className="space-y-1.5">
+                          <Label className="text-xs font-semibold text-muted-foreground tracking-wider uppercase">Tax ID / GSTIN</Label>
+                          <Input
+                            value={editTaxId}
+                            onChange={(e) => setEditTaxId(e.target.value)}
+                            placeholder="e.g. 27AAAAA0000A1Z5"
+                            className="bg-background border-border/80 focus:border-primary/50 text-foreground h-9 text-sm rounded-lg"
+                          />
+                        </div>
+                        <div className="space-y-1.5">
+                          <Label className="text-xs font-semibold text-muted-foreground tracking-wider uppercase">State</Label>
+                          <Input
+                            list="indian-states-cd"
+                            value={editState}
+                            onChange={(e) => setEditState(e.target.value)}
+                            placeholder="Search and select state..."
+                            className="bg-background border-border/80 focus:border-primary/50 text-foreground h-9 text-sm rounded-lg"
+                            autoComplete="off"
+                          />
+                          <datalist id="indian-states-cd">
+                            {INDIAN_STATES.map((s) => (
+                              <option key={s} value={s} />
+                            ))}
+                          </datalist>
+                        </div>
+                      </div>
+                    )}
                   </div>
                   <Button
                     onClick={saveDetails}

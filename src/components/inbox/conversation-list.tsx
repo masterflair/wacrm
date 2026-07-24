@@ -27,6 +27,7 @@ interface ConversationListProps {
   onSelect: (conversation: Conversation) => void;
   conversations: Conversation[];
   onConversationsLoaded: (conversations: Conversation[]) => void;
+  onStatusChange: (id: string, status: ConversationStatus) => void;
   /**
    * Increment to force the fetch effect below to refire. The parent
    * bumps this on realtime reconnect / tab visibility → visible so the
@@ -42,7 +43,17 @@ const STATUS_COLORS: Record<ConversationStatus, string> = {
   closed: "bg-muted-foreground",
 };
 
+const STATUS_OPTIONS: { label: string; value: ConversationStatus; color: string }[] = [
+  { label: "Open", value: "open", color: "text-primary" },
+  { label: "Pending", value: "pending", color: "text-amber-500" },
+  { label: "Closed", value: "closed", color: "text-muted-foreground" },
+];
 
+const STATUS_RING_COLORS: Record<ConversationStatus, string> = {
+  open: "ring-primary",
+  pending: "ring-amber-500",
+  closed: "ring-muted-foreground",
+};
 
 type InboxFilter = ConversationStatus | "all" | "unread";
 
@@ -51,6 +62,7 @@ export function ConversationList({
   onSelect,
   conversations,
   onConversationsLoaded,
+  onStatusChange,
   resyncToken = 0,
 }: ConversationListProps) {
   const t = useTranslations("Inbox.conversationList");
@@ -413,6 +425,7 @@ export function ConversationList({
                 conversation={conv}
                 isActive={conv.id === activeConversationId}
                 onSelect={handleSelect}
+                onStatusChange={onStatusChange}
                 t={t}
               />
             ))}
@@ -427,6 +440,7 @@ interface ConversationItemProps {
   conversation: Conversation;
   isActive: boolean;
   onSelect: (conversation: Conversation) => void;
+  onStatusChange: (id: string, status: ConversationStatus) => void;
   t: ReturnType<typeof useTranslations>;
 }
 
@@ -434,15 +448,29 @@ function ConversationItem({
   conversation,
   isActive,
   onSelect,
+  onStatusChange,
   t,
 }: ConversationItemProps) {
   const contact = conversation.contact;
   const displayName = contact?.name || contact?.phone || t("unknown");
   const initials = displayName.charAt(0).toUpperCase();
+  const currentStatus = STATUS_OPTIONS.find((s) => s.value === conversation.status);
 
   const handleClick = useCallback(() => {
     onSelect(conversation);
   }, [onSelect, conversation]);
+
+  const handleStatusChange = useCallback(
+    async (status: ConversationStatus) => {
+      const supabase = createClient();
+      await supabase
+        .from("conversations")
+        .update({ status })
+        .eq("id", conversation.id);
+      onStatusChange(conversation.id, status);
+    },
+    [conversation, onStatusChange]
+  );
 
   const timeAgo = conversation.last_message_at
     ? formatDistanceToNow(new Date(conversation.last_message_at), {
@@ -487,17 +515,41 @@ function ConversationItem({
         isActive ? "bg-muted/80 shadow-[0_4px_12px_rgba(0,0,0,0.05)] ring-1 ring-border/80" : "bg-transparent"
       )}
     >
-      {/* Avatar */}
-      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-muted text-sm font-medium text-foreground">
-        {contact?.avatar_url ? (
-          <img
-            src={contact.avatar_url}
-            alt={displayName}
-            className="h-10 w-10 rounded-full object-cover"
-          />
-        ) : (
-          initials
-        )}
+      {/* Avatar with Status Ring */}
+      <div className="shrink-0" onClick={(e) => e.stopPropagation()}>
+        <DropdownMenu>
+          <DropdownMenuTrigger className="focus-visible:outline-none rounded-full">
+            <div 
+              className={cn(
+                "flex h-10 w-10 items-center justify-center rounded-full bg-muted text-sm font-medium text-foreground ring-[0.5px] ring-offset-[1px] ring-offset-background hover:ring-1 transition-all",
+                STATUS_RING_COLORS[conversation.status] || "ring-muted-foreground"
+              )}
+              title={currentStatus ? t(`status${currentStatus.label}`) : t("status")}
+            >
+              {contact?.avatar_url ? (
+                <img
+                  src={contact.avatar_url}
+                  alt={displayName}
+                  className="h-full w-full rounded-full object-cover"
+                />
+              ) : (
+                initials
+              )}
+            </div>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="start" className="border-border bg-popover min-w-[120px]">
+            {STATUS_OPTIONS.map((opt) => (
+              <DropdownMenuItem
+                key={opt.value}
+                onClick={() => handleStatusChange(opt.value)}
+                className={cn("text-xs py-1 flex items-center gap-2", opt.color)}
+              >
+                <div className={cn("h-2 w-2 rounded-full", STATUS_COLORS[opt.value])} />
+                {t(`status${opt.label}`)}
+              </DropdownMenuItem>
+            ))}
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
 
       {/* Content */}
@@ -529,14 +581,21 @@ function ConversationItem({
             {contact.tags.map((tag) => (
               <div
                 key={tag.id}
-                className="inline-flex shrink-0 items-center gap-1 rounded-full border border-border/50 bg-muted/20 px-1.5 py-0.5 text-[9px] font-medium text-muted-foreground"
+                className={cn(
+                  "inline-flex shrink-0 items-center gap-1.5 rounded-full px-2 py-0.5 text-[10px] font-medium text-foreground shadow-sm border",
+                  (!tag.color || !tag.color.startsWith("#") || tag.color.length !== 7) && "bg-muted/40 border-border/70"
+                )}
+                style={{
+                  backgroundColor: tag.color?.startsWith("#") && tag.color.length === 7 ? `${tag.color}1A` : undefined,
+                  borderColor: tag.color?.startsWith("#") && tag.color.length === 7 ? `${tag.color}33` : undefined
+                }}
                 title={tag.name}
               >
                 <span
-                  className="h-1.5 w-1.5 shrink-0 rounded-full"
+                  className="h-2 w-2 shrink-0 rounded-full"
                   style={{ backgroundColor: tag.color ?? "var(--muted-foreground)" }}
                 />
-                <span className="whitespace-nowrap">{tag.name}</span>
+                <span className="whitespace-nowrap opacity-90">{tag.name}</span>
               </div>
             ))}
           </div>
